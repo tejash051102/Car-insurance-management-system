@@ -23,15 +23,15 @@ const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const cors = require("cors");
 
-// Connect Database
+app.use(cors({
+  origin: "https://car-insurance-frontend.onrender.com"
+}));
+
 connectDB();
 
-// Allowed Frontend URLs
-const allowedOrigins = (
-  process.env.CLIENT_URL ||
-  "http://localhost:5173,http://127.0.0.1:5173,https://car-insurance-frontend-fp9m.onrender.com"
-)
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
