@@ -21,7 +21,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors({
-  origin: "https://car-insurance-frontend.onrender.com"
+  origin: "https://car-insurance-frontend-fp9m.onrender.com"
 }));
 
 connectDB();
