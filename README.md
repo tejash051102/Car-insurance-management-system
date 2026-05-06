@@ -115,14 +115,6 @@ VITE_API_URL=http://localhost:5000/api
 ## Notes
 
 The app uses MongoDB as requested. The `database/insurance.sql` file is a relational reference schema included to match the provided folder structure.
-If Atlas connection fails, open MongoDB Atlas Network Access and allow your current IP address.
-# Car_Insurance_Company
-# Car_Insurance_Company
-# car-insurance-management-system
-# car-insurance-management-system
-# car-insurance-management-system
-# car-insurance-management-system
-# car-insurance-company
-# car-insurance-company
-# car-insurance-management-system
+If the Atlas connection fails, open MongoDB Atlas Network Access and allow your current IP address.
+
 # car-insurance-company
