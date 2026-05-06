@@ -1,0 +1,215 @@
+import { ClipboardCheck, Edit3, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import api from "../api/axios.js";
+
+const emptyForm = {
+  policy: "",
+  incidentDate: "",
+  claimAmount: "",
+  approvedAmount: "",
+  status: "submitted",
+  description: "",
+  document: null
+};
+
+const formatCurrency = (amount = 0) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0
+  }).format(amount);
+
+const Claims = () => {
+  const [claims, setClaims] = useState([]);
+  const [policies, setPolicies] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const loadData = async () => {
+    setError("");
+    try {
+      const [claimsResponse, policiesResponse] = await Promise.all([
+        api.get("/claims"),
+        api.get("/policies")
+      ]);
+      setClaims(claimsResponse.data);
+      setPolicies(policiesResponse.data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const updateField = (event) => {
+    const { name, value, files } = event.target;
+    setForm((current) => ({ ...current, [name]: files ? files[0] : value }));
+  };
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId("");
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const data = new FormData();
+    data.append("policy", form.policy);
+    data.append("incidentDate", form.incidentDate);
+    data.append("claimAmount", Number(form.claimAmount));
+    data.append("approvedAmount", Number(form.approvedAmount || 0));
+    data.append("status", form.status);
+    data.append("description", form.description);
+
+    if (form.document) {
+      data.append("document", form.document);
+    }
+
+    try {
+      if (editingId) {
+        await api.put(`/claims/${editingId}`, data);
+      } else {
+        await api.post("/claims", data);
+      }
+
+      resetForm();
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const editClaim = (claim) => {
+    setEditingId(claim._id);
+    setForm({
+      policy: claim.policy?._id || "",
+      incidentDate: claim.incidentDate ? claim.incidentDate.slice(0, 10) : "",
+      claimAmount: claim.claimAmount || "",
+      approvedAmount: claim.approvedAmount || "",
+      status: claim.status || "submitted",
+      description: claim.description || "",
+      document: null
+    });
+  };
+
+  const deleteClaim = async (id) => {
+    if (!window.confirm("Delete this claim?")) return;
+
+    try {
+      await api.delete(`/claims/${id}`);
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="label">Claims workflow</p>
+        <h2 className="mt-1 text-2xl font-bold text-ink">Claims</h2>
+      </div>
+
+      {error ? <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
+      <section className="panel p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <ClipboardCheck size={20} className="text-coral" />
+          <h3 className="text-lg font-bold text-ink">{editingId ? "Edit Claim" : "Register Claim"}</h3>
+        </div>
+        <form onSubmit={submit} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <select className="field xl:col-span-2" name="policy" value={form.policy} onChange={updateField} required>
+            <option value="">Select policy</option>
+            {policies.map((policy) => (
+              <option key={policy._id} value={policy._id}>
+                {policy.policyNumber} - {policy.customer?.fullName || "Customer"}
+              </option>
+            ))}
+          </select>
+          <input className="field" name="incidentDate" type="date" value={form.incidentDate} onChange={updateField} required />
+          <input className="field" name="claimAmount" type="number" min="0" value={form.claimAmount} onChange={updateField} placeholder="Claim amount" required />
+          <input className="field" name="approvedAmount" type="number" min="0" value={form.approvedAmount} onChange={updateField} placeholder="Approved amount" />
+          <select className="field" name="status" value={form.status} onChange={updateField}>
+            <option value="submitted">Submitted</option>
+            <option value="under-review">Under review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="settled">Settled</option>
+          </select>
+          <input className="field" name="document" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={updateField} />
+          <textarea className="field md:col-span-2 xl:col-span-4" name="description" value={form.description} onChange={updateField} placeholder="Incident description" rows="3" required />
+          <div className="flex gap-2">
+            <button className="btn-primary" type="submit" disabled={loading}>
+              <Plus size={16} />
+              {editingId ? "Update" : "Create"}
+            </button>
+            {editingId ? (
+              <button className="btn-secondary" type="button" onClick={resetForm}>
+                Cancel
+              </button>
+            ) : null}
+          </div>
+        </form>
+      </section>
+
+      <section className="panel overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-100 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Claim</th>
+                <th className="px-4 py-3">Policy</th>
+                <th className="px-4 py-3">Customer</th>
+                <th className="px-4 py-3">Amount</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {claims.map((claim) => (
+                <tr key={claim._id} className="border-b border-slate-100">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-ink">{claim.claimNumber}</p>
+                    <p className="text-xs text-slate-500">{claim.incidentDate?.slice(0, 10)}</p>
+                  </td>
+                  <td className="px-4 py-3">{claim.policy?.policyNumber || "N/A"}</td>
+                  <td className="px-4 py-3">{claim.customer?.fullName || "N/A"}</td>
+                  <td className="px-4 py-3">{formatCurrency(claim.claimAmount)}</td>
+                  <td className="px-4 py-3 capitalize">{claim.status}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => editClaim(claim)} aria-label="Edit claim">
+                        <Edit3 size={15} />
+                      </button>
+                      <button className="btn-danger h-9 w-9 px-0" type="button" onClick={() => deleteClaim(claim._id)} aria-label="Delete claim">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!claims.length ? (
+                <tr>
+                  <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
+                    No claims found.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default Claims;
