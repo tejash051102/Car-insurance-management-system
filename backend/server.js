@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 const cors = require("cors");
 
 app.use(cors({
-  origin: "https://car-insurance-frontend.onrender.com"
+  origin: "https://car-insurance-frontend-fp9m.onrender.com"
 }));
 
 connectDB();
