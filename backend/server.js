@@ -22,10 +22,25 @@ const __dirname = path.dirname(__filename);
 
 connectDB();
 
+const allowedOrigins = (
+  process.env.CLIENT_URL ||
+  "http://localhost:5173,http://127.0.0.1:5173,https://car-insurance-frontend-fp9m.onrender.com"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+// CORS Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked origin: ${origin}`));
+      }
+    },
+    credentials: true,
   })
 );
 app.use(express.json({ limit: "5mb" }));
