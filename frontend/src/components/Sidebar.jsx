@@ -27,8 +27,8 @@ const SidebarContent = ({ onClose }) => (
           <FileText size={22} />
         </div>
         <div>
-          <p className="text-sm font-bold text-ink">AutoSure</p>
-          <p className="text-xs text-slate-500">Insurance Management</p>
+          <p className="text-sm font-bold text-ink">Insurance</p>
+          <p className="text-xs text-slate-500">Management System</p>
         </div>
       </div>
       <button

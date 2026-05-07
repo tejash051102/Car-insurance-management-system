@@ -13,8 +13,8 @@ const Navbar = ({ user, onLogout, onMenuClick }) => {
           <Menu size={18} />
         </button>
         <div>
-          <p className="text-xs font-semibold uppercase text-slate-500">Car Insurance Company</p>
-          <h1 className="text-lg font-bold text-ink">Management Console</h1>
+          <p className="text-xs font-semibold uppercase text-slate-500">Insurance Management</p>
+          <h1 className="text-lg font-bold text-ink">System</h1>
         </div>
       </div>
 
