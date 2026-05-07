@@ -34,7 +34,7 @@ const Login = ({ onAuth }) => {
           <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-md bg-coral">
             <ShieldCheck size={30} />
           </div>
-          <h1 className="text-4xl font-bold">AutoSure Management System</h1>
+          <h1 className="text-4xl font-bold">Car Insurance Management System</h1>
           <p className="mt-5 text-base leading-7 text-slate-300">
             Manage customers, vehicles, policies, claims, and premium payments from one secure
             operations console.
