@@ -65,7 +65,7 @@ npm run dev
 4. Open the frontend at:
 
 ```text
-http://localhost:5173
+[http://localhost:5173](https://car-insurance-frontend-4x9z.onrender.com)
 ```
 
 Default seeded login:
