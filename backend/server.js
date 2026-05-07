@@ -74,6 +74,15 @@ const startServer = async () => {
     app.use("/api/payments", paymentRoutes);
     app.use("/api/dashboard", dashboardRoutes);
 
+    // Backward-compatible aliases for clients configured without the /api prefix.
+    app.use("/auth", authRoutes);
+    app.use("/customers", customerRoutes);
+    app.use("/vehicles", vehicleRoutes);
+    app.use("/policies", policyRoutes);
+    app.use("/claims", claimRoutes);
+    app.use("/payments", paymentRoutes);
+    app.use("/dashboard", dashboardRoutes);
+
     app.use(notFound);
     app.use(errorHandler);
 
