@@ -1,10 +1,15 @@
 import { LogOut, Menu, UserCircle } from "lucide-react";
 
-const Navbar = ({ user, onLogout }) => {
+const Navbar = ({ user, onLogout, onMenuClick }) => {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-8">
       <div className="flex items-center gap-3">
-        <button className="btn-secondary h-10 w-10 px-0 lg:hidden" aria-label="Open navigation">
+        <button
+          className="btn-secondary h-10 w-10 px-0 lg:hidden"
+          type="button"
+          onClick={onMenuClick}
+          aria-label="Open navigation"
+        >
           <Menu size={18} />
         </button>
         <div>
