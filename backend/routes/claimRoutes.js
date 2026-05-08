@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createClaim,
+  decideClaim,
   deleteClaim,
   exportClaims,
   getClaimById,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.route("/").get(protect, getClaims).post(protect, upload.single("document"), createClaim);
 router.get("/export/csv", protect, authorize("admin", "manager"), exportClaims);
+router.patch("/:id/decision", protect, authorize("admin", "manager"), decideClaim);
 router
   .route("/:id")
   .get(protect, getClaimById)

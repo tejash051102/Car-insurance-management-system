@@ -3,6 +3,7 @@ import Customer from "../models/Customer.js";
 import Vehicle from "../models/Vehicle.js";
 import Policy from "../models/Policy.js";
 import { sendCsv } from "../utils/csvExporter.js";
+import { logActivity } from "../utils/activityLogger.js";
 import { getPagination, sendPaginated } from "../utils/pagination.js";
 
 export const getCustomers = asyncHandler(async (req, res) => {
@@ -66,6 +67,14 @@ export const createCustomer = asyncHandler(async (req, res) => {
     createdBy: req.user?._id
   });
 
+  await logActivity({
+    req,
+    action: "created",
+    entityType: "Customer",
+    entityId: customer._id,
+    message: `Created customer ${customer.fullName}`
+  });
+
   res.status(201).json(customer);
 });
 
@@ -80,7 +89,50 @@ export const updateCustomer = asyncHandler(async (req, res) => {
     throw new Error("Customer not found");
   }
 
+  await logActivity({
+    req,
+    action: "updated",
+    entityType: "Customer",
+    entityId: customer._id,
+    message: `Updated customer ${customer.fullName}`
+  });
+
   res.json(customer);
+});
+
+export const uploadCustomerDocuments = asyncHandler(async (req, res) => {
+  const customer = await Customer.findById(req.params.id);
+
+  if (!customer) {
+    res.status(404);
+    throw new Error("Customer not found");
+  }
+
+  if (!req.files?.length) {
+    res.status(400);
+    throw new Error("Please upload at least one document");
+  }
+
+  const label = req.body.label || "Customer document";
+  const documents = req.files.map((file) => ({
+    label,
+    url: `/uploads/${file.filename}`,
+    originalName: file.originalname,
+    uploadedBy: req.user?._id
+  }));
+
+  customer.documents.push(...documents);
+  await customer.save();
+
+  await logActivity({
+    req,
+    action: "uploaded",
+    entityType: "Customer",
+    entityId: customer._id,
+    message: `Uploaded ${documents.length} document(s) for ${customer.fullName}`
+  });
+
+  res.status(201).json(customer);
 });
 
 export const deleteCustomer = asyncHandler(async (req, res) => {
@@ -98,6 +150,14 @@ export const deleteCustomer = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Customer not found");
   }
+
+  await logActivity({
+    req,
+    action: "deleted",
+    entityType: "Customer",
+    entityId: customer._id,
+    message: `Deleted customer ${customer.fullName}`
+  });
 
   res.json({ message: "Customer deleted successfully" });
 });

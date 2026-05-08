@@ -23,6 +23,14 @@ const api = axios.create({
   baseURL: getApiBaseUrl()
 });
 
+export const getAssetUrl = (path = "") => {
+  if (!path || /^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
 api.interceptors.request.use((config) => {
   config.url = withApiPrefix(config.url);
 

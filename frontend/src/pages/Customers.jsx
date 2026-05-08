@@ -1,6 +1,6 @@
-import { Download, Edit3, Plus, Search, Trash2, Users } from "lucide-react";
+import { Download, Edit3, FileText, Plus, Search, Trash2, Upload, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import api from "../api/axios.js";
+import api, { getAssetUrl } from "../api/axios.js";
 import Pagination from "../components/Pagination.jsx";
 import { getItems, getMeta } from "../utils/apiData.js";
 import { canManageRecords } from "../utils/auth.js";
@@ -27,6 +27,10 @@ const Customers = () => {
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0 });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [documentCustomer, setDocumentCustomer] = useState(null);
+  const [documentLabel, setDocumentLabel] = useState("");
+  const [documents, setDocuments] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const canManage = canManageRecords();
 
   const loadCustomers = async (term = search, page = 1) => {
@@ -115,6 +119,34 @@ const Customers = () => {
       await loadCustomers();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const uploadDocuments = async (event) => {
+    event.preventDefault();
+
+    if (!documentCustomer || !documents.length) {
+      setError("Choose a customer and at least one document");
+      return;
+    }
+
+    const data = new FormData();
+    data.append("label", documentLabel || "Customer document");
+    Array.from(documents).forEach((document) => data.append("documents", document));
+
+    setUploading(true);
+    setError("");
+
+    try {
+      await api.post(`/customers/${documentCustomer._id}/documents`, data);
+      setDocumentCustomer(null);
+      setDocumentLabel("");
+      setDocuments([]);
+      await loadCustomers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -209,6 +241,9 @@ const Customers = () => {
                       <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => editCustomer(customer)} aria-label="Edit customer">
                         <Edit3 size={15} />
                       </button>
+                      <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => setDocumentCustomer(customer)} aria-label="Upload customer documents">
+                        <Upload size={15} />
+                      </button>
                       {canManage ? (
                         <button className="btn-danger h-9 w-9 px-0" type="button" onClick={() => deleteCustomer(customer._id)} aria-label="Delete customer">
                           <Trash2 size={15} />
@@ -230,6 +265,42 @@ const Customers = () => {
         </div>
         <Pagination meta={meta} onPageChange={(page) => loadCustomers(search, page)} />
       </section>
+
+      {documentCustomer ? (
+        <section className="panel p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="label">Customer documents</p>
+              <h3 className="text-lg font-bold text-ink">{documentCustomer.fullName}</h3>
+            </div>
+            <button className="btn-secondary" type="button" onClick={() => setDocumentCustomer(null)}>
+              Close
+            </button>
+          </div>
+
+          <form onSubmit={uploadDocuments} className="grid gap-4 md:grid-cols-3">
+            <input className="field" value={documentLabel} onChange={(event) => setDocumentLabel(event.target.value)} placeholder="Document label" />
+            <input className="field" type="file" accept=".jpg,.jpeg,.png,.pdf" multiple onChange={(event) => setDocuments(event.target.files)} />
+            <button className="btn-primary" type="submit" disabled={uploading}>
+              <Upload size={16} />
+              {uploading ? "Uploading..." : "Upload"}
+            </button>
+          </form>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {(documentCustomer.documents || []).map((document) => (
+              <a key={document._id || document.url} className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm hover:border-brand" href={getAssetUrl(document.url)} target="_blank" rel="noreferrer">
+                <span className="flex items-center gap-2 font-semibold text-ink">
+                  <FileText size={16} />
+                  {document.label || "Document"}
+                </span>
+                <span className="mt-1 block truncate text-xs text-slate-500">{document.originalName || document.url}</span>
+              </a>
+            ))}
+            {!documentCustomer.documents?.length ? <p className="text-sm text-slate-500">No documents uploaded yet.</p> : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 };

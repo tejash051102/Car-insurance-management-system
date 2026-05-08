@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import Claim from "../models/Claim.js";
 import Policy from "../models/Policy.js";
 import { sendCsv } from "../utils/csvExporter.js";
+import { logActivity } from "../utils/activityLogger.js";
 import { getPagination, sendPaginated } from "../utils/pagination.js";
 
 const generateClaimNumber = () => `CLM-${Date.now().toString().slice(-8)}`;
@@ -81,6 +82,14 @@ export const createClaim = asyncHandler(async (req, res) => {
   });
 
   const populatedClaim = await claim.populate(["customer", "policy"]);
+  await logActivity({
+    req,
+    action: "created",
+    entityType: "Claim",
+    entityId: claim._id,
+    message: `Created claim ${claim.claimNumber}`
+  });
+
   res.status(201).json(populatedClaim);
 });
 
@@ -102,6 +111,54 @@ export const updateClaim = asyncHandler(async (req, res) => {
     throw new Error("Claim not found");
   }
 
+  await logActivity({
+    req,
+    action: "updated",
+    entityType: "Claim",
+    entityId: claim._id,
+    message: `Updated claim ${claim.claimNumber}`
+  });
+
+  res.json(claim);
+});
+
+export const decideClaim = asyncHandler(async (req, res) => {
+  const { status, approvedAmount, decisionNote } = req.body;
+  const allowedStatuses = ["under-review", "approved", "rejected", "settled"];
+
+  if (!allowedStatuses.includes(status)) {
+    res.status(400);
+    throw new Error("Invalid claim decision status");
+  }
+
+  const claim = await Claim.findByIdAndUpdate(
+    req.params.id,
+    {
+      status,
+      approvedAmount: Number(approvedAmount || 0),
+      decisionNote,
+      decidedBy: req.user?._id,
+      decidedAt: new Date()
+    },
+    { new: true, runValidators: true }
+  )
+    .populate("customer")
+    .populate("policy")
+    .populate("decidedBy", "name email role");
+
+  if (!claim) {
+    res.status(404);
+    throw new Error("Claim not found");
+  }
+
+  await logActivity({
+    req,
+    action: status,
+    entityType: "Claim",
+    entityId: claim._id,
+    message: `Marked claim ${claim.claimNumber} as ${status}`
+  });
+
   res.json(claim);
 });
 
@@ -112,6 +169,14 @@ export const deleteClaim = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Claim not found");
   }
+
+  await logActivity({
+    req,
+    action: "deleted",
+    entityType: "Claim",
+    entityId: claim._id,
+    message: `Deleted claim ${claim.claimNumber}`
+  });
 
   res.json({ message: "Claim deleted successfully" });
 });

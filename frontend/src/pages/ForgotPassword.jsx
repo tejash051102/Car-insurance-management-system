@@ -1,0 +1,72 @@
+import { KeyRound } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import api from "../api/axios.js";
+
+const ForgotPassword = () => {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [resetUrl, setResetUrl] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage("");
+    setResetUrl("");
+    setError("");
+
+    try {
+      const { data } = await api.post("/auth/forgot-password", { email });
+      setMessage(data.message);
+      setResetUrl(data.resetUrl || "");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-shell items-center justify-center px-4 py-10">
+      <form onSubmit={submit} className="auth-card max-w-md">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-cyan-50 text-brand shadow-sm">
+            <KeyRound size={25} />
+          </div>
+          <div>
+            <p className="label">Account recovery</p>
+            <h1 className="text-3xl font-bold text-ink">Forgot password</h1>
+          </div>
+        </div>
+
+        {error ? <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+        {message ? (
+          <div className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            <p>{message}</p>
+            {resetUrl ? (
+              <a className="mt-2 inline-block font-semibold underline" href={resetUrl}>
+                Reset password now
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+
+        <label className="label" htmlFor="email">
+          Email
+        </label>
+        <input className="field mt-1" id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+
+        <button className="btn-primary mt-6 w-full" type="submit" disabled={loading}>
+          {loading ? "Sending..." : "Send reset link"}
+        </button>
+        <Link className="mt-5 block text-center text-sm font-semibold text-brand hover:underline" to="/login">
+          Back to sign in
+        </Link>
+      </form>
+    </div>
+  );
+};
+
+export default ForgotPassword;

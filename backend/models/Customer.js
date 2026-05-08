@@ -42,6 +42,28 @@ const customerSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active"
     },
+    documents: [
+      {
+        label: {
+          type: String,
+          trim: true,
+          default: "Customer document"
+        },
+        url: {
+          type: String,
+          required: true
+        },
+        originalName: String,
+        uploadedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User"
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"

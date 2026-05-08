@@ -6,12 +6,17 @@ import Sidebar from "./components/Sidebar.jsx";
 import Claims from "./pages/Claims.jsx";
 import Customers from "./pages/Customers.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 import Login from "./pages/Login.jsx";
 import Payments from "./pages/Payments.jsx";
 import Policies from "./pages/Policies.jsx";
 import Register from "./pages/Register.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
+import SecurityDashboard from "./pages/SecurityDashboard.jsx";
+import Users from "./pages/Users.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Vehicles from "./pages/Vehicles.jsx";
+import Activities from "./pages/Activities.jsx";
 
 const getStoredUser = () => {
   const userInfo = localStorage.getItem("userInfo");
@@ -35,6 +40,9 @@ const AppLayout = ({ user, onLogout }) => {
               <Route path="/policies" element={<Policies />} />
               <Route path="/claims" element={<Claims />} />
               <Route path="/payments" element={<Payments />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/security" element={<SecurityDashboard />} />
+              <Route path="/activities" element={<Activities />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
@@ -62,6 +70,8 @@ const App = () => {
     <Routes>
       <Route path="/login" element={<Login onAuth={handleAuth} />} />
       <Route path="/register" element={<Register onAuth={handleAuth} />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword onAuth={handleAuth} />} />
       <Route path="/verify-email/:token" element={<VerifyEmail onAuth={handleAuth} />} />
       <Route path="/*" element={<AppLayout user={user} onLogout={handleLogout} />} />
     </Routes>

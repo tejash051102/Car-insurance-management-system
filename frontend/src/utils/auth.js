@@ -7,3 +7,5 @@ export const canManageRecords = () => {
   const role = getCurrentUser()?.role;
   return ["admin", "manager"].includes(role);
 };
+
+export const isAdmin = () => getCurrentUser()?.role === "admin";

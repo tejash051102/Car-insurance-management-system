@@ -1,4 +1,4 @@
-import { ClipboardCheck, Download, Edit3, Plus, Search, Trash2 } from "lucide-react";
+import { ClipboardCheck, Download, Edit3, Plus, Search, Stamp, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../api/axios.js";
 import Pagination from "../components/Pagination.jsx";
@@ -32,6 +32,9 @@ const Claims = () => {
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0 });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [decisionClaim, setDecisionClaim] = useState(null);
+  const [decision, setDecision] = useState({ status: "approved", approvedAmount: "", decisionNote: "" });
+  const [deciding, setDeciding] = useState(false);
   const canManage = canManageRecords();
 
   const loadData = async (page = 1, term = search) => {
@@ -117,6 +120,37 @@ const Claims = () => {
       await loadData();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const openDecision = (claim) => {
+    setDecisionClaim(claim);
+    setDecision({
+      status: claim.status === "submitted" ? "approved" : claim.status,
+      approvedAmount: claim.approvedAmount || claim.claimAmount || "",
+      decisionNote: claim.decisionNote || ""
+    });
+  };
+
+  const submitDecision = async (event) => {
+    event.preventDefault();
+
+    if (!decisionClaim) return;
+
+    setDeciding(true);
+    setError("");
+
+    try {
+      await api.patch(`/claims/${decisionClaim._id}/decision`, {
+        ...decision,
+        approvedAmount: Number(decision.approvedAmount || 0)
+      });
+      setDecisionClaim(null);
+      await loadData(meta.page, search);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeciding(false);
     }
   };
 
@@ -217,6 +251,11 @@ const Claims = () => {
                   <td className="px-4 py-3 capitalize">{claim.status}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
+                      {canManage ? (
+                        <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => openDecision(claim)} aria-label="Decide claim">
+                          <Stamp size={15} />
+                        </button>
+                      ) : null}
                       <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => editClaim(claim)} aria-label="Edit claim">
                         <Edit3 size={15} />
                       </button>
@@ -241,6 +280,34 @@ const Claims = () => {
         </div>
         <Pagination meta={meta} onPageChange={(page) => loadData(page, search)} />
       </section>
+
+      {decisionClaim ? (
+        <section className="panel p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="label">Claim decision</p>
+              <h3 className="text-lg font-bold text-ink">{decisionClaim.claimNumber}</h3>
+            </div>
+            <button className="btn-secondary" type="button" onClick={() => setDecisionClaim(null)}>
+              Close
+            </button>
+          </div>
+          <form onSubmit={submitDecision} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <select className="field" value={decision.status} onChange={(event) => setDecision((current) => ({ ...current, status: event.target.value }))}>
+              <option value="under-review">Under review</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="settled">Settled</option>
+            </select>
+            <input className="field" type="number" min="0" value={decision.approvedAmount} onChange={(event) => setDecision((current) => ({ ...current, approvedAmount: event.target.value }))} placeholder="Approved amount" />
+            <textarea className="field md:col-span-2" value={decision.decisionNote} onChange={(event) => setDecision((current) => ({ ...current, decisionNote: event.target.value }))} placeholder="Decision note" rows="2" />
+            <button className="btn-primary" type="submit" disabled={deciding}>
+              <Stamp size={16} />
+              {deciding ? "Saving..." : "Save decision"}
+            </button>
+          </form>
+        </section>
+      ) : null}
     </div>
   );
 };
