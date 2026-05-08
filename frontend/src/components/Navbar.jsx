@@ -2,7 +2,7 @@ import { LogOut, Menu, UserCircle } from "lucide-react";
 
 const Navbar = ({ user, onLogout, onMenuClick }) => {
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/80 bg-white/85 px-4 shadow-sm backdrop-blur lg:px-8">
       <div className="flex items-center gap-3">
         <button
           className="btn-secondary h-10 w-10 px-0 lg:hidden"
@@ -19,7 +19,7 @@ const Navbar = ({ user, onLogout, onMenuClick }) => {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 sm:flex">
+        <div className="hidden items-center gap-2 rounded-md border border-cyan-100 bg-cyan-50/70 px-3 py-2 sm:flex">
           <UserCircle size={18} className="text-brand" />
           <div className="leading-tight">
             <p className="text-sm font-semibold text-ink">{user?.name || "Agent"}</p>

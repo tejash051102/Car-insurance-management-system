@@ -7,14 +7,14 @@ const DashboardCard = ({ title, value, icon: Icon, accent = "brand", subtitle })
   };
 
   return (
-    <div className="panel p-5">
+    <div className="panel p-5 transition hover:-translate-y-0.5 hover:shadow-soft">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="label">{title}</p>
           <p className="mt-3 text-3xl font-bold text-ink">{value}</p>
           {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
         </div>
-        <div className={`flex h-11 w-11 items-center justify-center rounded-md ${accents[accent]}`}>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-md shadow-sm ${accents[accent]}`}>
           <Icon size={22} />
         </div>
       </div>

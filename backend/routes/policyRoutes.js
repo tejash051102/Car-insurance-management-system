@@ -3,16 +3,26 @@ import {
   createPolicy,
   deletePolicy,
   downloadPolicyPdf,
+  exportPolicies,
+  getExpiringPolicies,
   getPolicies,
   getPolicyById,
+  sendPolicyExpiryReminders,
   updatePolicy
 } from "../controllers/policyController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.route("/").get(protect, getPolicies).post(protect, createPolicy);
+router.get("/export/csv", protect, authorize("admin", "manager"), exportPolicies);
+router.get("/expiring", protect, getExpiringPolicies);
+router.post("/expiry-reminders", protect, authorize("admin", "manager"), sendPolicyExpiryReminders);
 router.get("/:id/pdf", protect, downloadPolicyPdf);
-router.route("/:id").get(protect, getPolicyById).put(protect, updatePolicy).delete(protect, deletePolicy);
+router
+  .route("/:id")
+  .get(protect, getPolicyById)
+  .put(protect, updatePolicy)
+  .delete(protect, authorize("admin", "manager"), deletePolicy);
 
 export default router;

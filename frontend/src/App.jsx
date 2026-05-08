@@ -10,6 +10,7 @@ import Login from "./pages/Login.jsx";
 import Payments from "./pages/Payments.jsx";
 import Policies from "./pages/Policies.jsx";
 import Register from "./pages/Register.jsx";
+import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Vehicles from "./pages/Vehicles.jsx";
 
 const getStoredUser = () => {
@@ -22,7 +23,7 @@ const AppLayout = ({ user, onLogout }) => {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-100/70">
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         <div className="lg:pl-64">
           <Navbar user={user} onLogout={onLogout} onMenuClick={() => setIsSidebarOpen(true)} />
@@ -61,6 +62,7 @@ const App = () => {
     <Routes>
       <Route path="/login" element={<Login onAuth={handleAuth} />} />
       <Route path="/register" element={<Register onAuth={handleAuth} />} />
+      <Route path="/verify-email/:token" element={<VerifyEmail onAuth={handleAuth} />} />
       <Route path="/*" element={<AppLayout user={user} onLogout={handleLogout} />} />
     </Routes>
   );

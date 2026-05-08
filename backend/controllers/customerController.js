@@ -2,6 +2,8 @@ import asyncHandler from "express-async-handler";
 import Customer from "../models/Customer.js";
 import Vehicle from "../models/Vehicle.js";
 import Policy from "../models/Policy.js";
+import { sendCsv } from "../utils/csvExporter.js";
+import { getPagination, sendPaginated } from "../utils/pagination.js";
 
 export const getCustomers = asyncHandler(async (req, res) => {
   const keyword = req.query.search
@@ -15,8 +17,13 @@ export const getCustomers = asyncHandler(async (req, res) => {
       }
     : {};
 
-  const customers = await Customer.find(keyword).sort({ createdAt: -1 });
-  res.json(customers);
+  const { page, limit, skip } = getPagination(req.query);
+  await sendPaginated(
+    res,
+    Customer.find(keyword).sort({ createdAt: -1 }),
+    Customer.countDocuments(keyword),
+    { page, limit, skip }
+  );
 });
 
 export const getCustomerById = asyncHandler(async (req, res) => {
@@ -33,6 +40,24 @@ export const getCustomerById = asyncHandler(async (req, res) => {
   ]);
 
   res.json({ ...customer.toObject(), vehicles, policies });
+});
+
+export const exportCustomers = asyncHandler(async (req, res) => {
+  const customers = await Customer.find().sort({ createdAt: -1 });
+
+  sendCsv(
+    res,
+    "customers.csv",
+    [
+      { label: "Name", value: (customer) => customer.fullName },
+      { label: "Email", value: (customer) => customer.email },
+      { label: "Phone", value: (customer) => customer.phone },
+      { label: "City", value: (customer) => customer.address?.city },
+      { label: "Status", value: (customer) => customer.status },
+      { label: "Created", value: (customer) => customer.createdAt?.toISOString() }
+    ],
+    customers
+  );
 });
 
 export const createCustomer = asyncHandler(async (req, res) => {

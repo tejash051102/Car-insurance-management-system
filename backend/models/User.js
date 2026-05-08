@@ -25,6 +25,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["admin", "agent", "manager"],
       default: "agent"
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false
+    },
+    emailVerifiedAt: {
+      type: Date
     }
   },
   { timestamps: true }

@@ -1,6 +1,10 @@
-import { ClipboardCheck, Edit3, Plus, Trash2 } from "lucide-react";
+import { ClipboardCheck, Download, Edit3, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../api/axios.js";
+import Pagination from "../components/Pagination.jsx";
+import { getItems, getMeta } from "../utils/apiData.js";
+import { canManageRecords } from "../utils/auth.js";
+import { downloadReport } from "../utils/download.js";
 
 const emptyForm = {
   policy: "",
@@ -24,18 +28,22 @@ const Claims = () => {
   const [policies, setPolicies] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState("");
+  const [search, setSearch] = useState("");
+  const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0 });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const canManage = canManageRecords();
 
-  const loadData = async () => {
+  const loadData = async (page = 1, term = search) => {
     setError("");
     try {
       const [claimsResponse, policiesResponse] = await Promise.all([
-        api.get("/claims"),
-        api.get("/policies")
+        api.get("/claims", { params: { page, limit: 10, ...(term ? { search: term } : {}) } }),
+        api.get("/policies", { params: { limit: 100 } })
       ]);
-      setClaims(claimsResponse.data);
-      setPolicies(policiesResponse.data);
+      setClaims(getItems(claimsResponse.data));
+      setMeta(getMeta(claimsResponse.data));
+      setPolicies(getItems(policiesResponse.data));
     } catch (err) {
       setError(err.message);
     }
@@ -114,9 +122,31 @@ const Claims = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="label">Claims workflow</p>
-        <h2 className="mt-1 text-2xl font-bold text-ink">Claims</h2>
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <div>
+          <p className="label">Claims workflow</p>
+          <h2 className="mt-1 text-2xl font-bold text-ink">Claims</h2>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+        <form
+          className="flex w-full gap-2 sm:w-auto"
+          onSubmit={(event) => {
+            event.preventDefault();
+            loadData(1, search);
+          }}
+        >
+          <input className="field" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search claim" />
+          <button className="btn-secondary" type="submit" aria-label="Search claims">
+            <Search size={16} />
+          </button>
+        </form>
+        {canManage ? (
+          <button className="btn-secondary" type="button" onClick={() => downloadReport("/claims/export/csv", "claims.csv")}>
+            <Download size={16} />
+            Export
+          </button>
+        ) : null}
+        </div>
       </div>
 
       {error ? <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -190,9 +220,11 @@ const Claims = () => {
                       <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => editClaim(claim)} aria-label="Edit claim">
                         <Edit3 size={15} />
                       </button>
-                      <button className="btn-danger h-9 w-9 px-0" type="button" onClick={() => deleteClaim(claim._id)} aria-label="Delete claim">
-                        <Trash2 size={15} />
-                      </button>
+                      {canManage ? (
+                        <button className="btn-danger h-9 w-9 px-0" type="button" onClick={() => deleteClaim(claim._id)} aria-label="Delete claim">
+                          <Trash2 size={15} />
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -207,6 +239,7 @@ const Claims = () => {
             </tbody>
           </table>
         </div>
+        <Pagination meta={meta} onPageChange={(page) => loadData(page, search)} />
       </section>
     </div>
   );

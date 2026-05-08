@@ -21,14 +21,14 @@ const items = [
 
 const SidebarContent = ({ onClose }) => (
   <>
-    <div className="flex h-16 items-center justify-between gap-3 border-b border-slate-200 px-6">
+    <div className="flex h-16 items-center justify-between gap-3 border-b border-white/10 px-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-brand text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white/15 text-white shadow-sm">
           <FileText size={22} />
         </div>
         <div>
-          <p className="text-sm font-bold text-ink">Insurance</p>
-          <p className="text-xs text-slate-500">Management System</p>
+          <p className="text-sm font-bold text-white">Insurance</p>
+          <p className="text-xs text-cyan-100">Management System</p>
         </div>
       </div>
       <button
@@ -49,8 +49,8 @@ const SidebarContent = ({ onClose }) => (
           className={({ isActive }) =>
             `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition ${
               isActive
-                ? "bg-cyan-50 text-brand"
-                : "text-slate-600 hover:bg-slate-100 hover:text-ink"
+                ? "bg-white text-brand shadow-sm"
+                : "text-cyan-50 hover:bg-white/10 hover:text-white"
             }`
           }
         >
@@ -73,7 +73,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         aria-hidden="true"
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-slate-200 bg-white transition-transform duration-200 lg:z-30 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-cyan-900/20 bg-brand transition-transform duration-200 lg:z-30 lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

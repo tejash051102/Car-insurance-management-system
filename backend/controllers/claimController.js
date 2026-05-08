@@ -1,20 +1,38 @@
 import asyncHandler from "express-async-handler";
 import Claim from "../models/Claim.js";
 import Policy from "../models/Policy.js";
+import { sendCsv } from "../utils/csvExporter.js";
+import { getPagination, sendPaginated } from "../utils/pagination.js";
 
 const generateClaimNumber = () => `CLM-${Date.now().toString().slice(-8)}`;
 
 export const getClaims = asyncHandler(async (req, res) => {
-  const filter = req.query.status ? { status: req.query.status } : {};
-  const claims = await Claim.find(filter)
-    .populate("customer")
-    .populate({
-      path: "policy",
-      populate: { path: "vehicle" }
-    })
-    .sort({ createdAt: -1 });
+  const filter = {
+    ...(req.query.status ? { status: req.query.status } : {}),
+    ...(req.query.search
+      ? {
+          $or: [
+            { claimNumber: { $regex: req.query.search, $options: "i" } },
+            { status: { $regex: req.query.search, $options: "i" } },
+            { description: { $regex: req.query.search, $options: "i" } }
+          ]
+        }
+      : {})
+  };
+  const { page, limit, skip } = getPagination(req.query);
 
-  res.json(claims);
+  await sendPaginated(
+    res,
+    Claim.find(filter)
+      .populate("customer")
+      .populate({
+        path: "policy",
+        populate: { path: "vehicle" }
+      })
+      .sort({ createdAt: -1 }),
+    Claim.countDocuments(filter),
+    { page, limit, skip }
+  );
 });
 
 export const getClaimById = asyncHandler(async (req, res) => {
@@ -26,6 +44,25 @@ export const getClaimById = asyncHandler(async (req, res) => {
   }
 
   res.json(claim);
+});
+
+export const exportClaims = asyncHandler(async (req, res) => {
+  const claims = await Claim.find().populate("customer").populate("policy").sort({ createdAt: -1 });
+
+  sendCsv(
+    res,
+    "claims.csv",
+    [
+      { label: "Claim Number", value: (claim) => claim.claimNumber },
+      { label: "Policy", value: (claim) => claim.policy?.policyNumber },
+      { label: "Customer", value: (claim) => claim.customer?.fullName },
+      { label: "Incident Date", value: (claim) => claim.incidentDate?.toISOString().slice(0, 10) },
+      { label: "Claim Amount", value: (claim) => claim.claimAmount },
+      { label: "Approved Amount", value: (claim) => claim.approvedAmount },
+      { label: "Status", value: (claim) => claim.status }
+    ],
+    claims
+  );
 });
 
 export const createClaim = asyncHandler(async (req, res) => {

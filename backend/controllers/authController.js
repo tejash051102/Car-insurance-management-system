@@ -1,5 +1,7 @@
 import asyncHandler from "express-async-handler";
+import crypto from "crypto";
 import User from "../models/User.js";
+import { sendEmail } from "../utils/emailService.js";
 import generateToken from "../utils/generateToken.js";
 
 const userResponse = (user) => ({
@@ -7,8 +9,39 @@ const userResponse = (user) => ({
   name: user.name,
   email: user.email,
   role: user.role,
+  isEmailVerified: user.isEmailVerified,
   token: generateToken(user._id)
 });
+
+const createVerificationToken = () => {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  return {
+    rawToken,
+    hashedToken,
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+  };
+};
+
+const getClientUrl = () => {
+  const [clientUrl] = (process.env.CLIENT_URL || "http://localhost:5173").split(",");
+  return clientUrl.trim().replace(/\/$/, "");
+};
+
+const sendVerificationEmail = async (user, rawToken) => {
+  const verificationUrl = `${getClientUrl()}/verify-email/${rawToken}`;
+  const result = await sendEmail({
+    to: user.email,
+    subject: "Verify your email address",
+    text: `Hello ${user.name},\n\nPlease verify your email address for Insurance Management System:\n${verificationUrl}\n\nThis link expires in 24 hours.\n\nIf you did not create this account, you can ignore this email.`
+  });
+
+  return {
+    verificationUrl,
+    emailSkipped: Boolean(result?.skipped)
+  };
+};
 
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -25,20 +58,100 @@ export const registerUser = asyncHandler(async (req, res) => {
     throw new Error("User already exists");
   }
 
-  const user = await User.create({ name, email, password, role });
-  res.status(201).json(userResponse(user));
+  const verification = createVerificationToken();
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role,
+    emailVerificationToken: verification.hashedToken,
+    emailVerificationExpires: verification.expires
+  });
+  const emailResult = await sendVerificationEmail(user, verification.rawToken);
+
+  res.status(201).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isEmailVerified: user.isEmailVerified,
+    verificationRequired: true,
+    message: "Account created. Please verify your email before signing in.",
+    ...(emailResult.emailSkipped ? { verificationUrl: emailResult.verificationUrl } : {})
+  });
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email }).select("+password +emailVerificationToken");
 
   if (user && (await user.matchPassword(password))) {
+    if (!user.isEmailVerified && user.emailVerificationToken) {
+      res.status(403);
+      throw new Error("Please verify your email before signing in");
+    }
+
     res.json(userResponse(user));
   } else {
     res.status(401);
     throw new Error("Invalid email or password");
   }
+});
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpires: { $gt: new Date() }
+  }).select("+emailVerificationToken +emailVerificationExpires");
+
+  if (!user) {
+    res.status(400);
+    throw new Error("Verification link is invalid or expired");
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerifiedAt = new Date();
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpires = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  res.json({
+    ...userResponse(user),
+    message: "Email verified successfully"
+  });
+});
+
+export const resendVerification = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    res.status(400);
+    throw new Error("Email is required");
+  }
+
+  const user = await User.findOne({ email }).select("+emailVerificationToken +emailVerificationExpires");
+
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (user.isEmailVerified) {
+    res.json({ message: "Email is already verified" });
+    return;
+  }
+
+  const verification = createVerificationToken();
+  user.emailVerificationToken = verification.hashedToken;
+  user.emailVerificationExpires = verification.expires;
+  await user.save({ validateBeforeSave: false });
+
+  const emailResult = await sendVerificationEmail(user, verification.rawToken);
+  res.json({
+    message: "Verification email sent",
+    ...(emailResult.emailSkipped ? { verificationUrl: emailResult.verificationUrl } : {})
+  });
 });
 
 export const getProfile = asyncHandler(async (req, res) => {
