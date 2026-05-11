@@ -211,6 +211,25 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   const otpResult = await sendTwoFactorEmail(user, otp.otp);
 
+  if (otpResult.emailSkipped) {
+    user.twoFactorOtpHash = undefined;
+    user.twoFactorOtpExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    await logSecurityEvent({
+      req,
+      type: "two-factor-failed",
+      severity: "high",
+      email: user.email,
+      user: user._id,
+      message: `Two-factor OTP could not be delivered for ${user.email}`,
+      metadata: { reason: "SMTP not configured" }
+    });
+
+    res.status(503);
+    throw new Error("OTP email service is not configured. Please add SMTP settings to backend .env.");
+  }
+
   await logSecurityEvent({
     req,
     type: "two-factor-sent",
@@ -224,8 +243,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   res.json({
     twoFactorRequired: true,
     email: user.email,
-    message: "Verification code sent to your email",
-    ...(otpResult.emailSkipped ? { devOtp: otp.otp } : {})
+    message: "Verification code sent to your email"
   });
 });
 

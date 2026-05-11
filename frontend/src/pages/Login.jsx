@@ -28,7 +28,7 @@ const Login = ({ onAuth }) => {
       const { data } = await api.post("/auth/login", form);
       if (data.twoFactorRequired) {
         setTwoFactor(data);
-        setVerificationMessage(data.devOtp ? `Development OTP: ${data.devOtp}` : data.message);
+        setVerificationMessage(data.message);
         return;
       }
       onAuth(data);
