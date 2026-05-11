@@ -1,6 +1,5 @@
 import multer from "multer";
 import path from "path";
-import { logSecurityEvent } from "../utils/securityLogger.js";
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
@@ -20,15 +19,6 @@ const fileFilter = (req, file, cb) => {
   if (isValidExtension && isValidMime) {
     cb(null, true);
   } else {
-    logSecurityEvent({
-      req,
-      type: "suspicious-file-upload",
-      severity: "high",
-      email: req.user?.email,
-      user: req.user?._id,
-      message: `Suspicious file upload blocked: ${file.originalname}`,
-      metadata: { mimetype: file.mimetype }
-    });
     cb(new Error("Only JPG, PNG, and PDF files are allowed"));
   }
 };

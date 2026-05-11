@@ -15,8 +15,6 @@ import claimRoutes from "./routes/claimRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
-import securityRoutes from "./routes/securityRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
 
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
@@ -30,8 +28,6 @@ const startServer = async () => {
     await connectDB();
 
     const app = express();
-    app.set("trust proxy", 1);
-
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
@@ -78,8 +74,6 @@ const startServer = async () => {
     app.use("/api/payments", paymentRoutes);
     app.use("/api/dashboard", dashboardRoutes);
     app.use("/api/activities", activityRoutes);
-    app.use("/api/security", securityRoutes);
-    app.use("/api/users", userRoutes);
 
     // Backward-compatible aliases for clients configured without the /api prefix.
     app.use("/auth", authRoutes);
@@ -90,8 +84,6 @@ const startServer = async () => {
     app.use("/payments", paymentRoutes);
     app.use("/dashboard", dashboardRoutes);
     app.use("/activities", activityRoutes);
-    app.use("/security", securityRoutes);
-    app.use("/users", userRoutes);
 
     app.use(notFound);
     app.use(errorHandler);

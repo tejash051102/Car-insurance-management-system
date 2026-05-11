@@ -4,15 +4,13 @@ import {
   FileText,
   Gauge,
   History,
-  ShieldAlert,
   ShieldCheck,
-  UserCog,
   Users,
   Car,
   X
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { canManageRecords, isAdmin } from "../utils/auth.js";
+import { canManageRecords } from "../utils/auth.js";
 
 const items = [
   { label: "Dashboard", to: "/", icon: Gauge },
@@ -21,8 +19,6 @@ const items = [
   { label: "Policies", to: "/policies", icon: ShieldCheck },
   { label: "Claims", to: "/claims", icon: ClipboardCheck },
   { label: "Payments", to: "/payments", icon: BadgeIndianRupee },
-  { label: "Users", to: "/users", icon: UserCog, adminOnly: true },
-  { label: "Security", to: "/security", icon: ShieldAlert, managerOnly: true },
   { label: "Activity", to: "/activities", icon: History, managerOnly: true }
 ];
 
@@ -48,7 +44,7 @@ const SidebarContent = ({ onClose }) => (
       </button>
     </div>
     <nav className="space-y-1 px-3 py-5">
-      {items.filter((item) => (!item.managerOnly || canManageRecords()) && (!item.adminOnly || isAdmin())).map((item) => (
+      {items.filter((item) => !item.managerOnly || canManageRecords()).map((item) => (
         <NavLink
           key={item.to}
           to={item.to}

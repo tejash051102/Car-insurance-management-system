@@ -48,30 +48,6 @@ const userSchema = new mongoose.Schema(
     passwordResetExpires: {
       type: Date,
       select: false
-    },
-    failedLoginAttempts: {
-      type: Number,
-      default: 0
-    },
-    lockUntil: {
-      type: Date
-    },
-    lastLoginAt: {
-      type: Date
-    },
-    lastLoginIp: {
-      type: String
-    },
-    lastUserAgent: {
-      type: String
-    },
-    twoFactorOtpHash: {
-      type: String,
-      select: false
-    },
-    twoFactorOtpExpires: {
-      type: Date,
-      select: false
     }
   },
   { timestamps: true }

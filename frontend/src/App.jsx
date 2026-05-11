@@ -12,8 +12,6 @@ import Payments from "./pages/Payments.jsx";
 import Policies from "./pages/Policies.jsx";
 import Register from "./pages/Register.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
-import SecurityDashboard from "./pages/SecurityDashboard.jsx";
-import Users from "./pages/Users.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Vehicles from "./pages/Vehicles.jsx";
 import Activities from "./pages/Activities.jsx";
@@ -40,8 +38,6 @@ const AppLayout = ({ user, onLogout }) => {
               <Route path="/policies" element={<Policies />} />
               <Route path="/claims" element={<Claims />} />
               <Route path="/payments" element={<Payments />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/security" element={<SecurityDashboard />} />
               <Route path="/activities" element={<Activities />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

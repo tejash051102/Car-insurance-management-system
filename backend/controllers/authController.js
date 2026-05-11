@@ -3,11 +3,6 @@ import crypto from "crypto";
 import User from "../models/User.js";
 import { sendEmail } from "../utils/emailService.js";
 import generateToken from "../utils/generateToken.js";
-import { getRequestMeta, logSecurityEvent } from "../utils/securityLogger.js";
-
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_TIME_MS = 15 * 60 * 1000;
-const TWO_FACTOR_EXPIRY_MS = 10 * 60 * 1000;
 
 const userResponse = (user) => ({
   _id: user._id,
@@ -62,29 +57,6 @@ const sendPasswordResetEmail = async (user, rawToken) => {
   };
 };
 
-const createOtp = () => {
-  const otp = crypto.randomInt(100000, 999999).toString();
-  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
-
-  return {
-    otp,
-    hashedOtp,
-    expires: new Date(Date.now() + TWO_FACTOR_EXPIRY_MS)
-  };
-};
-
-const sendTwoFactorEmail = async (user, otp) => {
-  const result = await sendEmail({
-    to: user.email,
-    subject: "Your login verification code",
-    text: `Hello ${user.name},\n\nYour Insurance Management System login verification code is ${otp}.\n\nThis code expires in 10 minutes.\n\nIf you did not try to sign in, contact your administrator.`
-  });
-
-  return {
-    emailSkipped: Boolean(result?.skipped)
-  };
-};
-
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -125,182 +97,19 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email }).select("+password +emailVerificationToken +twoFactorOtpHash +twoFactorOtpExpires");
+  const user = await User.findOne({ email }).select("+password +emailVerificationToken");
 
-  if (!user) {
-    await logSecurityEvent({
-      req,
-      type: "login-failed",
-      severity: "medium",
-      email,
-      message: `Failed login for unknown email ${email || "blank"}`
-    });
-    res.status(401);
-    throw new Error("Invalid email or password");
-  }
-
-  if (user.lockUntil && user.lockUntil > new Date()) {
-    await logSecurityEvent({
-      req,
-      type: "account-locked",
-      severity: "high",
-      email: user.email,
-      user: user._id,
-      message: `Blocked login attempt for locked account ${user.email}`,
-      metadata: { lockUntil: user.lockUntil }
-    });
-    res.status(423);
-    throw new Error("Account is locked due to suspicious login attempts. Try again later.");
-  }
-
-  const passwordMatches = await user.matchPassword(password);
-
-  if (!passwordMatches) {
-    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-
-    if (user.failedLoginAttempts >= MAX_LOGIN_ATTEMPTS) {
-      user.lockUntil = new Date(Date.now() + LOCK_TIME_MS);
-      await logSecurityEvent({
-        req,
-        type: "account-locked",
-        severity: "critical",
-        email: user.email,
-        user: user._id,
-        message: `Account locked after ${user.failedLoginAttempts} failed login attempts`,
-        metadata: { lockUntil: user.lockUntil }
-      });
-    } else {
-      await logSecurityEvent({
-        req,
-        type: "login-failed",
-        severity: user.failedLoginAttempts >= 3 ? "high" : "medium",
-        email: user.email,
-        user: user._id,
-        message: `Failed login attempt ${user.failedLoginAttempts} for ${user.email}`,
-        metadata: { failedLoginAttempts: user.failedLoginAttempts }
-      });
+  if (user && (await user.matchPassword(password))) {
+    if (!user.isEmailVerified && user.emailVerificationToken) {
+      res.status(403);
+      throw new Error("Please verify your email before signing in");
     }
 
-    await user.save({ validateBeforeSave: false });
+    res.json(userResponse(user));
+  } else {
     res.status(401);
     throw new Error("Invalid email or password");
   }
-
-  if (!user.isEmailVerified && user.emailVerificationToken) {
-    await logSecurityEvent({
-      req,
-      type: "login-failed",
-      severity: "medium",
-      email: user.email,
-      user: user._id,
-      message: `Unverified account attempted login: ${user.email}`
-    });
-    res.status(403);
-    throw new Error("Please verify your email before signing in");
-  }
-
-  const { ipAddress, userAgent } = getRequestMeta(req);
-  user.failedLoginAttempts = 0;
-  user.lockUntil = undefined;
-  user.lastLoginIp = ipAddress;
-  user.lastUserAgent = userAgent;
-  const otp = createOtp();
-  user.twoFactorOtpHash = otp.hashedOtp;
-  user.twoFactorOtpExpires = otp.expires;
-  await user.save({ validateBeforeSave: false });
-
-  const otpResult = await sendTwoFactorEmail(user, otp.otp);
-
-  if (otpResult.emailSkipped) {
-    user.twoFactorOtpHash = undefined;
-    user.twoFactorOtpExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    await logSecurityEvent({
-      req,
-      type: "two-factor-failed",
-      severity: "high",
-      email: user.email,
-      user: user._id,
-      message: `Two-factor OTP could not be delivered for ${user.email}`,
-      metadata: { reason: "SMTP not configured" }
-    });
-
-    res.status(503);
-    throw new Error("OTP email service is not configured. Please add SMTP settings to backend .env.");
-  }
-
-  await logSecurityEvent({
-    req,
-    type: "two-factor-sent",
-    severity: "medium",
-    email: user.email,
-    user: user._id,
-    message: `Two-factor login code sent for ${user.email}`,
-    metadata: { expires: otp.expires }
-  });
-
-  res.json({
-    twoFactorRequired: true,
-    email: user.email,
-    message: "Verification code sent to your email"
-  });
-});
-
-export const verifyTwoFactor = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
-
-  if (!email || !otp) {
-    res.status(400);
-    throw new Error("Email and OTP are required");
-  }
-
-  const hashedOtp = crypto.createHash("sha256").update(String(otp)).digest("hex");
-  const user = await User.findOne({
-    email,
-    twoFactorOtpHash: hashedOtp,
-    twoFactorOtpExpires: { $gt: new Date() }
-  }).select("+twoFactorOtpHash +twoFactorOtpExpires");
-
-  if (!user) {
-    await logSecurityEvent({
-      req,
-      type: "two-factor-failed",
-      severity: "high",
-      email,
-      message: `Invalid or expired two-factor code for ${email}`
-    });
-    res.status(401);
-    throw new Error("Invalid or expired verification code");
-  }
-
-  const { ipAddress, userAgent } = getRequestMeta(req);
-  user.twoFactorOtpHash = undefined;
-  user.twoFactorOtpExpires = undefined;
-  user.lastLoginAt = new Date();
-  user.lastLoginIp = ipAddress;
-  user.lastUserAgent = userAgent;
-  await user.save({ validateBeforeSave: false });
-
-  await logSecurityEvent({
-    req,
-    type: "two-factor-success",
-    severity: "low",
-    email: user.email,
-    user: user._id,
-    message: `Two-factor authentication completed for ${user.email}`
-  });
-
-  await logSecurityEvent({
-    req,
-    type: "login-success",
-    severity: "low",
-    email: user.email,
-    user: user._id,
-    message: `Successful login for ${user.email}`
-  });
-
-  res.json(userResponse(user));
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
@@ -320,15 +129,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.emailVerificationToken = undefined;
   user.emailVerificationExpires = undefined;
   await user.save({ validateBeforeSave: false });
-
-  await logSecurityEvent({
-    req,
-    type: "email-verification-success",
-    severity: "low",
-    email: user.email,
-    user: user._id,
-    message: `Email verified for ${user.email}`
-  });
 
   res.json({
     ...userResponse(user),
@@ -388,15 +188,6 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
   await user.save({ validateBeforeSave: false });
 
-  await logSecurityEvent({
-    req,
-    type: "password-reset-request",
-    severity: "medium",
-    email: user.email,
-    user: user._id,
-    message: `Password reset requested for ${user.email}`
-  });
-
   const emailResult = await sendPasswordResetEmail(user, reset.rawToken);
   res.json({
     message: "If this email exists, a reset link has been sent",
@@ -426,18 +217,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.password = password;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
-  user.failedLoginAttempts = 0;
-  user.lockUntil = undefined;
   await user.save();
-
-  await logSecurityEvent({
-    req,
-    type: "password-reset-success",
-    severity: "medium",
-    email: user.email,
-    user: user._id,
-    message: `Password reset completed for ${user.email}`
-  });
 
   res.json({
     ...userResponse(user),
