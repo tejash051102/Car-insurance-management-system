@@ -10,6 +10,8 @@ const Login = ({ onAuth }) => {
   const [error, setError] = useState("");
   const [verificationUrl, setVerificationUrl] = useState("");
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [twoFactor, setTwoFactor] = useState(null);
+  const [otp, setOtp] = useState("");
 
   const updateField = (event) => {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -24,6 +26,29 @@ const Login = ({ onAuth }) => {
 
     try {
       const { data } = await api.post("/auth/login", form);
+      if (data.twoFactorRequired) {
+        setTwoFactor(data);
+        setVerificationMessage(data.message || "Verification code sent to your Gmail");
+        return;
+      }
+      onAuth(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitOtp = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data } = await api.post("/auth/verify-2fa", {
+        email: twoFactor.email,
+        otp
+      });
       onAuth(data);
     } catch (err) {
       setError(err.message);
@@ -90,15 +115,17 @@ const Login = ({ onAuth }) => {
       </section>
 
       <section className="relative flex flex-1 items-center justify-center px-4 py-10">
-        <form onSubmit={submit} className="auth-card">
+        <form onSubmit={twoFactor ? submitOtp : submit} className="auth-card">
           <div className="mb-8 flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-cyan-50 text-brand shadow-sm">
               <ShieldCheck size={25} />
             </div>
             <div>
               <p className="label">Welcome back</p>
-              <h2 className="mt-2 text-3xl font-bold text-ink">Sign in</h2>
-              <p className="mt-2 text-sm text-slate-500">Access your policies, claims, payments, and reports.</p>
+              <h2 className="mt-2 text-3xl font-bold text-ink">{twoFactor ? "Verify code" : "Sign in"}</h2>
+              <p className="mt-2 text-sm text-slate-500">
+                {twoFactor ? "Enter the code sent to your Gmail to complete login." : "Access your policies, claims, payments, and reports."}
+              </p>
             </div>
           </div>
 
@@ -124,7 +151,24 @@ const Login = ({ onAuth }) => {
             </div>
           ) : null}
 
-          <div className="space-y-4">
+          {twoFactor ? (
+            <div>
+              <label className="label" htmlFor="otp">
+                Verification code
+              </label>
+              <input
+                className="field mt-1"
+                id="otp"
+                inputMode="numeric"
+                maxLength={6}
+                value={otp}
+                onChange={(event) => setOtp(event.target.value)}
+                placeholder="Enter 6-digit code"
+                required
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
             <div>
               <label className="label" htmlFor="email">
                 Email
@@ -137,10 +181,11 @@ const Login = ({ onAuth }) => {
               </label>
               <input className="field mt-1" id="password" name="password" type="password" value={form.password} onChange={updateField} required />
             </div>
-          </div>
+            </div>
+          )}
 
           <button className="btn-primary mt-6 w-full" type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Please wait..." : twoFactor ? "Verify and sign in" : "Sign in"}
           </button>
 
           <Link className="mt-4 block text-center text-sm font-semibold text-brand hover:underline" to="/forgot-password">

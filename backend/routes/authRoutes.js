@@ -6,7 +6,8 @@ import {
   registerUser,
   resetPassword,
   resendVerification,
-  verifyEmail
+  verifyEmail,
+  verifyTwoFactor
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/verify-2fa", verifyTwoFactor);
 router.get("/verify-email/:token", verifyEmail);
 router.post("/resend-verification", resendVerification);
 router.post("/forgot-password", forgotPassword);

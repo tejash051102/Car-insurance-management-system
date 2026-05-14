@@ -4,6 +4,8 @@ import User from "../models/User.js";
 import { sendEmail } from "../utils/emailService.js";
 import generateToken from "../utils/generateToken.js";
 
+const TWO_FACTOR_EXPIRY_MS = 10 * 60 * 1000;
+
 const userResponse = (user) => ({
   _id: user._id,
   name: user.name,
@@ -59,6 +61,29 @@ const sendPasswordResetEmail = async (user, rawToken) => {
   };
 };
 
+const createOtp = () => {
+  const otp = crypto.randomInt(100000, 999999).toString();
+  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+  return {
+    otp,
+    hashedOtp,
+    expires: new Date(Date.now() + TWO_FACTOR_EXPIRY_MS)
+  };
+};
+
+const sendTwoFactorEmail = async (user, otp) => {
+  const result = await sendEmail({
+    to: user.email,
+    subject: "Your login verification code",
+    text: `Hello ${user.name},\n\nYour Insurance Management System login verification code is ${otp}.\n\nThis code expires in 10 minutes.\n\nIf you did not try to sign in, please ignore this email.`
+  });
+
+  return {
+    emailSkipped: Boolean(result?.skipped)
+  };
+};
+
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -99,7 +124,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email }).select("+password +emailVerificationToken");
+  const user = await User.findOne({ email }).select("+password +emailVerificationToken +twoFactorOtpHash +twoFactorOtpExpires");
 
   if (user && (await user.matchPassword(password))) {
     if (!user.isEmailVerified && user.emailVerificationToken) {
@@ -107,11 +132,58 @@ export const loginUser = asyncHandler(async (req, res) => {
       throw new Error("Please verify your email before signing in");
     }
 
-    res.json(userResponse(user));
+    const otp = createOtp();
+    user.twoFactorOtpHash = otp.hashedOtp;
+    user.twoFactorOtpExpires = otp.expires;
+    await user.save({ validateBeforeSave: false });
+
+    const emailResult = await sendTwoFactorEmail(user, otp.otp);
+
+    if (emailResult.emailSkipped) {
+      user.twoFactorOtpHash = undefined;
+      user.twoFactorOtpExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      res.status(503);
+      throw new Error("OTP email service is not configured. Please configure Gmail SMTP in backend .env.");
+    }
+
+    res.json({
+      twoFactorRequired: true,
+      email: user.email,
+      message: "Verification code sent to your Gmail"
+    });
   } else {
     res.status(401);
     throw new Error("Invalid email or password");
   }
+});
+
+export const verifyTwoFactor = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    res.status(400);
+    throw new Error("Email and OTP are required");
+  }
+
+  const hashedOtp = crypto.createHash("sha256").update(String(otp)).digest("hex");
+  const user = await User.findOne({
+    email,
+    twoFactorOtpHash: hashedOtp,
+    twoFactorOtpExpires: { $gt: new Date() }
+  }).select("+twoFactorOtpHash +twoFactorOtpExpires");
+
+  if (!user) {
+    res.status(401);
+    throw new Error("Invalid or expired verification code");
+  }
+
+  user.twoFactorOtpHash = undefined;
+  user.twoFactorOtpExpires = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  res.json(userResponse(user));
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {

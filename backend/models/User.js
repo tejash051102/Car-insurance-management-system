@@ -48,6 +48,14 @@ const userSchema = new mongoose.Schema(
     passwordResetExpires: {
       type: Date,
       select: false
+    },
+    twoFactorOtpHash: {
+      type: String,
+      select: false
+    },
+    twoFactorOtpExpires: {
+      type: Date,
+      select: false
     }
   },
   { timestamps: true }
