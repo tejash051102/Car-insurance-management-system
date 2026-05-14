@@ -148,7 +148,16 @@ export const loginUser = asyncHandler(async (req, res) => {
 
     const emailResult = await sendTwoFactorEmail(user, otp.otp);
 
-    if (emailResult.emailSkipped) {
+    if (emailResult.skipped && process.env.NODE_ENV === "development") {
+      // In development, allow login with OTP shown in console
+      res.json({
+        twoFactorRequired: true,
+        email: user.email,
+        message: "Verification code sent to your Gmail (check server console in dev mode)",
+        devModeOtp: otp.otp
+      });
+    } else if (emailResult.skipped) {
+      // In production, require real email
       user.twoFactorOtpHash = undefined;
       user.twoFactorOtpExpires = undefined;
       await user.save({ validateBeforeSave: false });
@@ -161,16 +170,15 @@ export const loginUser = asyncHandler(async (req, res) => {
         "2. Update SMTP_USER with your Gmail address\n" +
         "3. Generate Google App Password at: https://myaccount.google.com/apppasswords\n" +
         "4. Update SMTP_PASS with your App Password\n" +
-        "5. Restart the server\n\n" +
-        "In development mode, OTP codes are logged to console if email is not configured."
+        "5. Restart the server"
       );
+    } else {
+      res.json({
+        twoFactorRequired: true,
+        email: user.email,
+        message: "Verification code sent to your Gmail"
+      });
     }
-
-    res.json({
-      twoFactorRequired: true,
-      email: user.email,
-      message: "Verification code sent to your Gmail"
-    });
   } else {
     res.status(401);
     throw new Error("Invalid email or password");

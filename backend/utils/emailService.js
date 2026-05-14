@@ -36,32 +36,41 @@ export const sendEmail = async ({ to, subject, text }) => {
   }
 
   if (!hasSmtpConfig()) {
-    console.log(`[email:dev] ${subject} -> ${to}`);
+    console.log(`\n${"=".repeat(70)}`);
+    console.log(`[EMAIL - DEV MODE] ${subject}`);
+    console.log(`To: ${to}`);
+    console.log(`${"=".repeat(70)}`);
     console.log(text);
-    return { skipped: true, reason: "SMTP not configured" };
+    console.log(`${"=".repeat(70)}\n`);
+    return { skipped: true, reason: "SMTP not configured - dev mode" };
   }
 
-  const nodemailer = await import("nodemailer");
-  const transporter = nodemailer.default.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: process.env.SMTP_SECURE === "true",
-    family: 4,
-    connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 8000),
-    greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 8000),
-    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 10000),
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
+  try {
+    const nodemailer = await import("nodemailer");
+    const transporter = nodemailer.default.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: process.env.SMTP_SECURE === "true",
+      family: 4,
+      connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 8000),
+      greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 8000),
+      socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 10000),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
 
-  return transporter.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
-    to,
-    subject,
-    text
-  });
+    return transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to,
+      subject,
+      text
+    });
+  } catch (error) {
+    console.error("[EMAIL ERROR]", error.message);
+    throw error;
+  }
 };
 
 export const buildPolicyExpiryMessage = (policy) => {
