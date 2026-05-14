@@ -29,8 +29,10 @@ const getClientUrl = () => {
   return clientUrl.trim().replace(/\/$/, "");
 };
 
+const getClientRouteUrl = (path) => `${getClientUrl()}/#${path.startsWith("/") ? path : `/${path}`}`;
+
 const sendVerificationEmail = async (user, rawToken) => {
-  const verificationUrl = `${getClientUrl()}/verify-email/${rawToken}`;
+  const verificationUrl = getClientRouteUrl(`/verify-email/${rawToken}`);
   const result = await sendEmail({
     to: user.email,
     subject: "Verify your email address",
@@ -44,7 +46,7 @@ const sendVerificationEmail = async (user, rawToken) => {
 };
 
 const sendPasswordResetEmail = async (user, rawToken) => {
-  const resetUrl = `${getClientUrl()}/reset-password/${rawToken}`;
+  const resetUrl = getClientRouteUrl(`/reset-password/${rawToken}`);
   const result = await sendEmail({
     to: user.email,
     subject: "Reset your password",
