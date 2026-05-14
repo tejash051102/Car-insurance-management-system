@@ -5,6 +5,7 @@ import { sendEmail } from "../utils/emailService.js";
 import generateToken from "../utils/generateToken.js";
 
 const TWO_FACTOR_EXPIRY_MS = 10 * 60 * 1000;
+const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
 const userResponse = (user) => ({
   _id: user._id,
@@ -32,6 +33,12 @@ const getClientUrl = () => {
 };
 
 const getClientRouteUrl = (path) => `${getClientUrl()}/#${path.startsWith("/") ? path : `/${path}`}`;
+
+const assertStrongPassword = (password) => {
+  if (!strongPasswordPattern.test(password || "")) {
+    throw new Error("Password must be at least 8 characters and include uppercase, lowercase, number, and special character");
+  }
+};
 
 const sendVerificationEmail = async (user, rawToken) => {
   const verificationUrl = getClientRouteUrl(`/verify-email/${rawToken}`);
@@ -91,6 +98,8 @@ export const registerUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Name, email, and password are required");
   }
+
+  assertStrongPassword(password);
 
   const userExists = await User.findOne({ email });
 
@@ -272,10 +281,12 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 export const resetPassword = asyncHandler(async (req, res) => {
   const { password } = req.body;
 
-  if (!password || password.length < 6) {
+  if (!password) {
     res.status(400);
-    throw new Error("Password must be at least 6 characters");
+    throw new Error("Password is required");
   }
+
+  assertStrongPassword(password);
 
   const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
   const user = await User.findOne({

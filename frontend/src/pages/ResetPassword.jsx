@@ -48,7 +48,8 @@ const ResetPassword = ({ onAuth }) => {
         <label className="label" htmlFor="password">
           New password
         </label>
-        <input className="field mt-1" id="password" type="password" minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} required />
+        <input className="field mt-1" id="password" type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required />
+        <p className="mt-1 text-xs text-slate-500">Use 8+ characters with uppercase, lowercase, number, and special character.</p>
 
         <button className="btn-primary mt-6 w-full" type="submit" disabled={loading}>
           {loading ? "Resetting..." : "Reset password"}

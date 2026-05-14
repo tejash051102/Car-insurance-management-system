@@ -89,7 +89,8 @@ const Register = ({ onAuth }) => {
             <label className="label" htmlFor="password">
               Password
             </label>
-            <input className="field mt-1" id="password" name="password" type="password" value={form.password} onChange={updateField} required minLength={6} />
+            <input className="field mt-1" id="password" name="password" type="password" value={form.password} onChange={updateField} required minLength={8} />
+            <p className="mt-1 text-xs text-slate-500">Use 8+ characters with uppercase, lowercase, number, and special character.</p>
           </div>
           <div className="sm:col-span-2">
             <label className="label" htmlFor="role">

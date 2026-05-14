@@ -17,6 +17,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
+import { authRateLimit, securityHeaders } from "./middleware/securityMiddleware.js";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ const startServer = async () => {
     await connectDB();
 
     const app = express();
+    app.set("trust proxy", 1);
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
@@ -52,8 +54,9 @@ const startServer = async () => {
       })
     );
 
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+    app.use(securityHeaders);
+    app.use(express.json({ limit: "1mb" }));
+    app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
     if (process.env.NODE_ENV === "development") {
       app.use(morgan("dev"));
@@ -67,7 +70,7 @@ const startServer = async () => {
 
     app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-    app.use("/api/auth", authRoutes);
+    app.use("/api/auth", authRateLimit, authRoutes);
     app.use("/api/customers", customerRoutes);
     app.use("/api/vehicles", vehicleRoutes);
     app.use("/api/policies", policyRoutes);
@@ -77,7 +80,7 @@ const startServer = async () => {
     app.use("/api/activities", activityRoutes);
 
     // Backward-compatible aliases for clients configured without the /api prefix.
-    app.use("/auth", authRoutes);
+    app.use("/auth", authRateLimit, authRoutes);
     app.use("/customers", customerRoutes);
     app.use("/vehicles", vehicleRoutes);
     app.use("/policies", policyRoutes);
