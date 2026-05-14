@@ -37,11 +37,12 @@ const startServer = async () => {
     )
       .split(",")
       .map((origin) => origin.trim());
+    const isRenderOrigin = (origin = "") => /^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin);
 
     app.use(
       cors({
         origin(origin, callback) {
-          if (!origin || allowedOrigins.includes(origin)) {
+          if (!origin || allowedOrigins.includes(origin) || isRenderOrigin(origin)) {
             callback(null, true);
           } else {
             callback(new Error(`CORS blocked origin: ${origin}`));

@@ -1,9 +1,12 @@
 import axios from "axios";
 
 const API_PREFIX = "/api";
+const DEFAULT_API_URL = import.meta.env.PROD
+  ? "https://car-insurance-backend-bxnz.onrender.com/api"
+  : "http://localhost:5000/api";
 
 const getApiBaseUrl = () => {
-  const rawUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const rawUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL;
   const trimmedUrl = rawUrl.trim().replace(/\/+$/, "");
 
   return trimmedUrl.endsWith(API_PREFIX)
