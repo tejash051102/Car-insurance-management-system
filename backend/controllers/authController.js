@@ -154,7 +154,16 @@ export const loginUser = asyncHandler(async (req, res) => {
       await user.save({ validateBeforeSave: false });
 
       res.status(503);
-      throw new Error("OTP email service is not configured. Please configure Gmail SMTP in backend .env.");
+      throw new Error(
+        "OTP email service is not configured.\n\n" +
+        "Setup Instructions:\n" +
+        "1. Go to backend/.env file\n" +
+        "2. Update SMTP_USER with your Gmail address\n" +
+        "3. Generate Google App Password at: https://myaccount.google.com/apppasswords\n" +
+        "4. Update SMTP_PASS with your App Password\n" +
+        "5. Restart the server\n\n" +
+        "In development mode, OTP codes are logged to console if email is not configured."
+      );
     }
 
     res.json({
