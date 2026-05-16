@@ -5,6 +5,7 @@ import {
   History,
   ShieldCheck,
   Users,
+  UserRound,
   Car,
   X,
   ChevronRight,
@@ -16,6 +17,7 @@ import { canManageRecords } from "../utils/auth.js";
 const items = [
   { label: "Dashboard", to: "/", icon: Gauge },
   { label: "Customers", to: "/customers", icon: Users },
+  { label: "Customer Portal", to: "/customer-login", icon: UserRound },
   { label: "Vehicles", to: "/vehicles", icon: Car },
   { label: "Policies", to: "/policies", icon: ShieldCheck },
   { label: "Claims", to: "/claims", icon: ClipboardCheck },

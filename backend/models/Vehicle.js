@@ -30,7 +30,7 @@ const vehicleSchema = new mongoose.Schema(
     },
     vehicleType: {
       type: String,
-      enum: ["car", "suv", "truck", "van", "other"],
+      enum: ["car", "bike", "suv", "truck", "van", "other"],
       default: "car"
     },
     fuelType: {

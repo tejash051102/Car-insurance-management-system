@@ -163,6 +163,7 @@ const Vehicles = () => {
           <input className="field" name="year" type="number" min="1980" value={form.year} onChange={updateField} placeholder="Year" required />
           <select className="field" name="vehicleType" value={form.vehicleType} onChange={updateField}>
             <option value="car">Car</option>
+            <option value="bike">Bike</option>
             <option value="suv">SUV</option>
             <option value="truck">Truck</option>
             <option value="van">Van</option>
