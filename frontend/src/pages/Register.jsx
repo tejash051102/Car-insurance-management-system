@@ -474,7 +474,7 @@ const Register = ({ onAuth }) => {
 
         {/* form */}
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
 
             {/* full name — full width */}
             <div style={{ gridColumn: "1 / -1" }}>
@@ -529,8 +529,8 @@ const Register = ({ onAuth }) => {
       </div>
 
       {/* ── step indicators ── */}
-      <div style={{ position: "relative", zIndex: 1, marginTop: "24px", display: "flex", gap: "6px", alignItems: "center" }}>
-        {["Fill details", "Verify email", "Access dashboard"].map((step, i) => (
+      <div style={{ position: "relative", zIndex: 1, marginTop: "24px", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px", alignItems: "center" }}>
+        {["Fill details", "Choose role", "Access dashboard"].map((step, i) => (
           <div key={step} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <div style={{
               width: "20px", height: "20px", borderRadius: "50%",

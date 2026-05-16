@@ -15,22 +15,28 @@ import ResetPassword from "./pages/ResetPassword.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
 import Vehicles from "./pages/Vehicles.jsx";
 import Activities from "./pages/Activities.jsx";
+import { clearAuthUser, getAuthUser, saveAuthUser } from "./utils/authStorage.js";
 
 const getStoredUser = () => {
-  const userInfo = localStorage.getItem("userInfo");
-  return userInfo ? JSON.parse(userInfo) : null;
+  return getAuthUser();
 };
 
 const AppLayout = ({ user, onLogout }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-100/70">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <div className="lg:pl-64">
+      <div className="app-shell min-h-screen">
+        <Sidebar
+          isOpen={isSidebarOpen}
+          isExpanded={isSidebarExpanded}
+          onClose={() => setIsSidebarOpen(false)}
+          onToggleExpand={() => setIsSidebarExpanded((current) => !current)}
+        />
+        <div className={`relative z-10 transition-[padding] duration-300 ${isSidebarExpanded ? "lg:pl-64" : "lg:pl-[60px]"}`}>
           <Navbar user={user} onLogout={onLogout} onMenuClick={() => setIsSidebarOpen(true)} />
-          <main className="px-4 py-6 lg:px-8">
+          <main className="app-main px-4 py-6 lg:px-8">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/customers" element={<Customers />} />
@@ -53,23 +59,20 @@ const App = () => {
   const user = getStoredUser();
 
   const handleAuth = (userInfo) => {
-    localStorage.setItem("userInfo", JSON.stringify(userInfo));
+    saveAuthUser(userInfo);
     navigate("/", { replace: true });
   };
-  
-const handleLogout = () => {
-  // Remove user data
-  localStorage.removeItem("userInfo");
 
-  // Optional: remove token if stored separately
-  localStorage.removeItem("token");
+  const handleLogout = () => {
+    // Remove user data
+    clearAuthUser();
 
-  // Redirect to login page
-  navigate("/login", { replace: true });
+    // Redirect to login page
+    navigate("/login", { replace: true });
 
-  // Optional: refresh app state
-  window.location.reload();
-};
+    // Optional: refresh app state
+    window.location.reload();
+  };
 
   return (
     <Routes>

@@ -1,6 +1,7 @@
+import { getAuthUser } from "./authStorage.js";
+
 export const getCurrentUser = () => {
-  const userInfo = localStorage.getItem("userInfo");
-  return userInfo ? JSON.parse(userInfo) : null;
+  return getAuthUser();
 };
 
 export const canManageRecords = () => {

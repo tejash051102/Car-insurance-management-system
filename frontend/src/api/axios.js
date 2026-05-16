@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAuthUser } from "../utils/authStorage.js";
 
 const API_PREFIX = "/api";
 const DEFAULT_API_URL = import.meta.env.PROD
@@ -37,10 +38,10 @@ export const getAssetUrl = (path = "") => {
 api.interceptors.request.use((config) => {
   config.url = withApiPrefix(config.url);
 
-  const userInfo = localStorage.getItem("userInfo");
+  const userInfo = getAuthUser();
 
   if (userInfo) {
-    const { token } = JSON.parse(userInfo);
+    const { token } = userInfo;
     config.headers.Authorization = `Bearer ${token}`;
   }
 
