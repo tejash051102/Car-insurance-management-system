@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
 const customerSchema = new mongoose.Schema(
@@ -23,6 +24,11 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true
+    },
+    password: {
+      type: String,
+      minlength: 6,
+      select: false
     },
     dateOfBirth: {
       type: Date
@@ -87,12 +93,33 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+customerSchema.pre("save", async function hashPassword(next) {
+  if (!this.isModified("password") || !this.password) {
+    return next();
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+customerSchema.methods.matchPassword = async function matchPassword(enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
+};
+
 customerSchema.virtual("fullName").get(function fullName() {
   return `${this.firstName} ${this.lastName}`;
 });
 
-customerSchema.set("toJSON", { virtuals: true });
-customerSchema.set("toObject", { virtuals: true });
+const hidePrivateFields = (_doc, ret) => {
+  delete ret.password;
+  delete ret.contactVerificationOtpHash;
+  delete ret.contactVerificationExpires;
+  return ret;
+};
+
+customerSchema.set("toJSON", { virtuals: true, transform: hidePrivateFields });
+customerSchema.set("toObject", { virtuals: true, transform: hidePrivateFields });
 
 const Customer = mongoose.model("Customer", customerSchema);
 

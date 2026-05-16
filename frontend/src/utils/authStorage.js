@@ -1,4 +1,5 @@
 const USER_KEY = "userInfo";
+const CUSTOMER_KEY = "customerInfo";
 const TOKEN_KEY = "token";
 const TAB_PREFIX = "ims-tab:";
 
@@ -47,4 +48,34 @@ export const clearAuthUser = () => {
   sessionStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(TOKEN_KEY);
+};
+
+export const saveCustomerUser = (customerInfo) => {
+  sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify({ ...customerInfo, authTabId: getTabId() }));
+};
+
+export const getCustomerUser = () => {
+  const rawCustomer = sessionStorage.getItem(CUSTOMER_KEY);
+
+  if (!rawCustomer) {
+    return null;
+  }
+
+  try {
+    const customer = JSON.parse(rawCustomer);
+
+    if (customer.authTabId !== getTabId()) {
+      sessionStorage.removeItem(CUSTOMER_KEY);
+      return null;
+    }
+
+    return customer;
+  } catch {
+    sessionStorage.removeItem(CUSTOMER_KEY);
+    return null;
+  }
+};
+
+export const clearCustomerUser = () => {
+  sessionStorage.removeItem(CUSTOMER_KEY);
 };

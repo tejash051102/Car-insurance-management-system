@@ -204,15 +204,16 @@ function Field({ label, id, type = "text", name, value, onChange, required, minL
                 right: "11px",
                 top: "50%",
                 transform: "translateY(-50%)",
+                zIndex: 2,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 width: "28px",
                 height: "28px",
-                border: "none",
+                border: "1px solid rgba(14,165,233,0.24)",
                 borderRadius: "8px",
-                background: "transparent",
-                color: showPassword ? "#0ea5e9" : "rgba(255,255,255,0.45)",
+                background: "rgba(14,165,233,0.12)",
+                color: showPassword ? "#67e8f9" : "#bae6fd",
                 cursor: "pointer",
               }}
             >
@@ -533,6 +534,7 @@ const Register = ({ onAuth }) => {
                   { value: "agent",   label: "Agent" },
                   { value: "manager", label: "Manager" },
                   { value: "admin",   label: "Admin" },
+                  
                 ]}
               />
               <RolePill role={form.role} />

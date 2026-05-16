@@ -9,6 +9,7 @@ import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
+import customerPortalRoutes from "./routes/customerPortalRoutes.js";
 import vehicleRoutes from "./routes/vehicleRoutes.js";
 import policyRoutes from "./routes/policyRoutes.js";
 import claimRoutes from "./routes/claimRoutes.js";
@@ -72,6 +73,7 @@ const startServer = async () => {
 
     app.use("/api/auth", authRateLimit, authRoutes);
     app.use("/api/customers", customerRoutes);
+    app.use("/api/customer-portal", customerPortalRoutes);
     app.use("/api/vehicles", vehicleRoutes);
     app.use("/api/policies", policyRoutes);
     app.use("/api/claims", claimRoutes);
@@ -82,6 +84,7 @@ const startServer = async () => {
     // Backward-compatible aliases for clients configured without the /api prefix.
     app.use("/auth", authRateLimit, authRoutes);
     app.use("/customers", customerRoutes);
+    app.use("/customer-portal", customerPortalRoutes);
     app.use("/vehicles", vehicleRoutes);
     app.use("/policies", policyRoutes);
     app.use("/claims", claimRoutes);

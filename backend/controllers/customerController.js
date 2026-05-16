@@ -1,4 +1,5 @@
 import asyncHandler from "express-async-handler";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import Customer from "../models/Customer.js";
 import Vehicle from "../models/Vehicle.js";
@@ -128,7 +129,16 @@ export const createCustomer = asyncHandler(async (req, res) => {
 });
 
 export const updateCustomer = asyncHandler(async (req, res) => {
-  const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, {
+  const update = { ...req.body };
+
+  if (update.password) {
+    const salt = await bcrypt.genSalt(10);
+    update.password = await bcrypt.hash(update.password, salt);
+  } else {
+    delete update.password;
+  }
+
+  const customer = await Customer.findByIdAndUpdate(req.params.id, update, {
     new: true,
     runValidators: true
   });

@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, Edit3, FileText, KeyRound, Plus, Search, Trash2, Upload, Users } from "lucide-react";
+import { CheckCircle2, Download, Edit3, Eye, EyeOff, FileText, KeyRound, Plus, Search, Trash2, Upload, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import api, { getAssetUrl } from "../api/axios.js";
 import Pagination from "../components/Pagination.jsx";
@@ -16,7 +16,8 @@ const emptyForm = {
   city: "",
   state: "",
   zipCode: "",
-  status: "active"
+  status: "active",
+  password: ""
 };
 
 const Customers = () => {
@@ -35,6 +36,7 @@ const Customers = () => {
   const [verificationCustomer, setVerificationCustomer] = useState(null);
   const [customerOtp, setCustomerOtp] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const canManage = canManageRecords();
 
   const loadCustomers = async (term = search, page = 1) => {
@@ -76,6 +78,7 @@ const Customers = () => {
       phone: form.phone,
       dateOfBirth: form.dateOfBirth || undefined,
       status: form.status,
+      ...(form.password ? { password: form.password } : {}),
       address: {
         street: form.street,
         city: form.city,
@@ -114,7 +117,8 @@ const Customers = () => {
       city: customer.address?.city || "",
       state: customer.address?.state || "",
       zipCode: customer.address?.zipCode || "",
-      status: customer.status || "active"
+      status: customer.status || "active",
+      password: ""
     });
   };
 
@@ -254,6 +258,27 @@ const Customers = () => {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+          <div className="relative">
+            <input
+              className="field pr-12"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              minLength={6}
+              value={form.password}
+              onChange={updateField}
+              placeholder={editingId ? "New portal password (optional)" : "Customer portal password"}
+              required={!editingId}
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-100 transition hover:bg-cyan-400/20 hover:text-cyan-200"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={18} strokeWidth={1.8} /> : <Eye size={18} strokeWidth={1.8} />}
+            </button>
+          </div>
           <div className="flex gap-2 xl:col-span-2">
             <button className="btn-primary" type="submit" disabled={loading}>
               <Plus size={16} />

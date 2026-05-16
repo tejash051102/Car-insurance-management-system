@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAuthUser } from "../utils/authStorage.js";
+import { getAuthUser, getCustomerUser } from "../utils/authStorage.js";
 
 const API_PREFIX = "/api";
 const DEFAULT_API_URL = import.meta.env.PROD
@@ -38,7 +38,8 @@ export const getAssetUrl = (path = "") => {
 api.interceptors.request.use((config) => {
   config.url = withApiPrefix(config.url);
 
-  const userInfo = getAuthUser();
+  const isCustomerPortalRequest = config.url?.startsWith("/api/customer-portal") || config.url?.startsWith("/customer-portal");
+  const userInfo = isCustomerPortalRequest ? getCustomerUser() : getAuthUser();
 
   if (userInfo) {
     const { token } = userInfo;
