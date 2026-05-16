@@ -58,9 +58,18 @@ const App = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("userInfo");
-    navigate("/login", { replace: true });
-  };
+  // Remove user data
+  localStorage.removeItem("userInfo");
+
+  // Optional: remove token if stored separately
+  localStorage.removeItem("token");
+
+  // Redirect to login page
+  navigate("/login", { replace: true });
+
+  // Optional: refresh app state
+  window.location.reload();
+};
 
   return (
     <Routes>
