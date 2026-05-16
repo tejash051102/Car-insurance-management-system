@@ -7,7 +7,9 @@ const AnimatedAuthBackground = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return undefined;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
     let frame;
     let width;
     let height;
@@ -135,7 +137,17 @@ const AnimatedAuthBackground = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 z-0 h-full w-full pointer-events-none" />;
+  return (
+    <div
+      className="fixed inset-0 z-0 pointer-events-none"
+      style={{
+        background:
+          "radial-gradient(circle at 80% 15%, rgba(99,102,241,0.18), transparent 32%), radial-gradient(circle at 18% 42%, rgba(14,165,233,0.18), transparent 34%), #04080f"
+      }}
+    >
+      <canvas ref={canvasRef} className="h-full w-full" />
+    </div>
+  );
 };
 
 export default AnimatedAuthBackground;
