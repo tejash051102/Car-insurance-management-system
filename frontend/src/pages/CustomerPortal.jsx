@@ -2,6 +2,7 @@ import { BadgeIndianRupee, ClipboardCheck, Download, LogOut, Plus, ShieldCheck }
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import api from "../api/axios.js";
+import AnimatedAuthBackground from "../components/AnimatedAuthBackground.jsx";
 import { clearCustomerUser, getCustomerUser } from "../utils/authStorage.js";
 import { downloadBlob } from "../utils/download.js";
 
@@ -112,8 +113,9 @@ const CustomerPortal = () => {
   };
 
   return (
-    <div className="app-shell min-h-screen">
-      <main className="relative z-10 mx-auto max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+    <div className="relative min-h-screen overflow-hidden text-white">
+      <AnimatedAuthBackground />
+      <main className="app-main relative z-10 mx-auto max-w-7xl space-y-6 px-4 py-6 lg:px-8">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
             <p className="label">Customer portal</p>
