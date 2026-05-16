@@ -5,8 +5,10 @@ import {
   exportCustomers,
   getCustomerById,
   getCustomers,
+  resendCustomerOtp,
   updateCustomer,
-  uploadCustomerDocuments
+  uploadCustomerDocuments,
+  verifyCustomerOtp
 } from "../controllers/customerController.js";
 import { authorize, protect } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
@@ -16,6 +18,8 @@ const router = express.Router();
 router.route("/").get(protect, getCustomers).post(protect, createCustomer);
 router.get("/export/csv", protect, authorize("admin", "manager"), exportCustomers);
 router.post("/:id/documents", protect, upload.array("documents", 5), uploadCustomerDocuments);
+router.post("/:id/send-otp", protect, resendCustomerOtp);
+router.post("/:id/verify-otp", protect, verifyCustomerOtp);
 router
   .route("/:id")
   .get(protect, getCustomerById)

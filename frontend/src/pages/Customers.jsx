@@ -1,4 +1,4 @@
-import { Download, Edit3, FileText, Plus, Search, Trash2, Upload, Users } from "lucide-react";
+import { CheckCircle2, Download, Edit3, FileText, KeyRound, Plus, Search, Trash2, Upload, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import api, { getAssetUrl } from "../api/axios.js";
 import Pagination from "../components/Pagination.jsx";
@@ -31,6 +31,10 @@ const Customers = () => {
   const [documentLabel, setDocumentLabel] = useState("");
   const [documents, setDocuments] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [verificationCustomer, setVerificationCustomer] = useState(null);
+  const [customerOtp, setCustomerOtp] = useState("");
+  const [verifying, setVerifying] = useState(false);
   const canManage = canManageRecords();
 
   const loadCustomers = async (term = search, page = 1) => {
@@ -63,6 +67,7 @@ const Customers = () => {
     event.preventDefault();
     setLoading(true);
     setError("");
+    setNotice("");
 
     const payload = {
       firstName: form.firstName,
@@ -83,7 +88,9 @@ const Customers = () => {
       if (editingId) {
         await api.put(`/customers/${editingId}`, payload);
       } else {
-        await api.post("/customers", payload);
+        const { data } = await api.post("/customers", payload);
+        setNotice(data.message || "Customer created");
+        setVerificationCustomer(data.customer || null);
       }
 
       resetForm();
@@ -150,6 +157,52 @@ const Customers = () => {
     }
   };
 
+  const openVerification = (customer) => {
+    setVerificationCustomer(customer);
+    setCustomerOtp("");
+    setNotice("");
+    setError("");
+  };
+
+  const resendCustomerOtp = async () => {
+    if (!verificationCustomer) return;
+
+    setVerifying(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const { data } = await api.post(`/customers/${verificationCustomer._id}/send-otp`);
+      setNotice(data.message || "Verification code sent to customer email");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const verifyCustomerOtp = async (event) => {
+    event.preventDefault();
+
+    if (!verificationCustomer) return;
+
+    setVerifying(true);
+    setError("");
+    setNotice("");
+
+    try {
+      await api.post(`/customers/${verificationCustomer._id}/verify-otp`, { otp: customerOtp });
+      setNotice("Customer contact verified successfully");
+      setVerificationCustomer(null);
+      setCustomerOtp("");
+      await loadCustomers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -180,6 +233,7 @@ const Customers = () => {
       </div>
 
       {error ? <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {notice ? <div className="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div> : null}
 
       <section className="panel p-5">
         <div className="mb-4 flex items-center gap-2">
@@ -223,6 +277,7 @@ const Customers = () => {
                 <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Location</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Verified</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -237,7 +292,15 @@ const Customers = () => {
                   <td className="px-4 py-3">{customer.address?.city || "N/A"}</td>
                   <td className="px-4 py-3 capitalize">{customer.status}</td>
                   <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-1 text-xs font-bold ${customer.contactVerified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                      {customer.contactVerified ? "Verified" : "Pending"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
+                      <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => openVerification(customer)} aria-label="Verify customer contact">
+                        {customer.contactVerified ? <CheckCircle2 size={15} /> : <KeyRound size={15} />}
+                      </button>
                       <button className="btn-secondary h-9 w-9 px-0" type="button" onClick={() => editCustomer(customer)} aria-label="Edit customer">
                         <Edit3 size={15} />
                       </button>
@@ -255,7 +318,7 @@ const Customers = () => {
               ))}
               {!customers.length ? (
                 <tr>
-                  <td colSpan="5" className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
                     No customers found.
                   </td>
                 </tr>
@@ -299,6 +362,41 @@ const Customers = () => {
             ))}
             {!documentCustomer.documents?.length ? <p className="text-sm text-slate-500">No documents uploaded yet.</p> : null}
           </div>
+        </section>
+      ) : null}
+
+      {verificationCustomer ? (
+        <section className="panel p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="label">Customer OTP verification</p>
+              <h3 className="text-lg font-bold text-ink">{verificationCustomer.fullName}</h3>
+              <p className="mt-1 text-sm text-slate-500">Ask the customer for the 6-digit code sent to {verificationCustomer.email}.</p>
+            </div>
+            <button className="btn-secondary" type="button" onClick={() => setVerificationCustomer(null)}>
+              Close
+            </button>
+          </div>
+
+          <form onSubmit={verifyCustomerOtp} className="grid gap-4 md:grid-cols-3">
+            <input
+              className="field"
+              inputMode="numeric"
+              maxLength={6}
+              value={customerOtp}
+              onChange={(event) => setCustomerOtp(event.target.value)}
+              placeholder="Enter OTP"
+              required
+            />
+            <button className="btn-primary" type="submit" disabled={verifying}>
+              <CheckCircle2 size={16} />
+              {verifying ? "Verifying..." : "Verify"}
+            </button>
+            <button className="btn-secondary" type="button" onClick={resendCustomerOtp} disabled={verifying}>
+              <KeyRound size={16} />
+              Resend OTP
+            </button>
+          </form>
         </section>
       ) : null}
     </div>

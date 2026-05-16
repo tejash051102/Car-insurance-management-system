@@ -42,6 +42,21 @@ const customerSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active"
     },
+    contactVerified: {
+      type: Boolean,
+      default: false
+    },
+    contactVerifiedAt: {
+      type: Date
+    },
+    contactVerificationOtpHash: {
+      type: String,
+      select: false
+    },
+    contactVerificationExpires: {
+      type: Date,
+      select: false
+    },
     documents: [
       {
         label: {
