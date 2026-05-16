@@ -1,7 +1,6 @@
 import {
   BadgeIndianRupee,
   ClipboardCheck,
-  FileText,
   Gauge,
   History,
   ShieldCheck,
@@ -33,8 +32,8 @@ const SidebarContent = ({ onClose, isExpanded, onToggleExpand }) => (
       }`}
     >
       <div className="flex items-center gap-3 overflow-hidden">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white shadow-inner shadow-white/5 ring-1 ring-white/20">
-          <FileText size={18} />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/15 text-white shadow-inner shadow-white/5 ring-1 ring-white/20">
+          <img src="/favicon.svg" alt="Insurance Management System" className="h-8 w-8 object-contain" />
         </div>
         {isExpanded && (
           <div className="min-w-0 overflow-hidden">
