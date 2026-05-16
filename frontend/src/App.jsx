@@ -56,6 +56,7 @@ const App = () => {
     localStorage.setItem("userInfo", JSON.stringify(userInfo));
     navigate("/", { replace: true });
   };
+  
 const handleLogout = () => {
   // Remove user data
   localStorage.removeItem("userInfo");
