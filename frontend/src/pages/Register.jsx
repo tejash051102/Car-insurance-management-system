@@ -1,4 +1,4 @@
-import { ShieldPlus, Sparkles } from "lucide-react";
+import { Eye, EyeOff, ShieldPlus, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios.js";
@@ -166,25 +166,60 @@ function AnimatedBackground() {
 ══════════════════════════════════════════ */
 function Field({ label, id, type = "text", name, value, onChange, required, minLength, hint, children }) {
   const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword && showPassword ? "text" : type;
+  const PasswordIcon = showPassword ? EyeOff : Eye;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <label htmlFor={id} style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
         {label}
       </label>
       {children ?? (
-        <input
-          id={id} name={name} type={type} value={value}
-          onChange={onChange} required={required} minLength={minLength}
-          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          style={{
-            background: focused ? "rgba(14,165,233,0.07)" : "rgba(255,255,255,0.04)",
-            border: `1px solid ${focused ? "rgba(14,165,233,0.5)" : "rgba(255,255,255,0.1)"}`,
-            borderRadius: "10px", padding: "12px 14px", fontSize: "14px",
-            color: "#fff", outline: "none", width: "100%",
-            transition: "background 0.2s, border-color 0.2s",
-            caretColor: "#0ea5e9",
-          }}
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            id={id} name={name} type={inputType} value={value}
+            onChange={onChange} required={required} minLength={minLength}
+            onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+            style={{
+              background: focused ? "rgba(14,165,233,0.07)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${focused ? "rgba(14,165,233,0.5)" : "rgba(255,255,255,0.1)"}`,
+              borderRadius: "10px",
+              padding: isPassword ? "12px 46px 12px 14px" : "12px 14px",
+              fontSize: "14px",
+              color: "#fff", outline: "none", width: "100%",
+              transition: "background 0.2s, border-color 0.2s",
+              caretColor: "#0ea5e9",
+            }}
+          />
+          {isPassword && (
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
+              style={{
+                position: "absolute",
+                right: "11px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "28px",
+                height: "28px",
+                border: "none",
+                borderRadius: "8px",
+                background: "transparent",
+                color: showPassword ? "#0ea5e9" : "rgba(255,255,255,0.45)",
+                cursor: "pointer",
+              }}
+            >
+              <PasswordIcon size={17} strokeWidth={1.8} />
+            </button>
+          )}
+        </div>
       )}
       {hint && <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", lineHeight: 1.5, marginTop: "2px" }}>{hint}</p>}
     </div>
@@ -322,11 +357,9 @@ const Register = ({ onAuth }) => {
     [headRef, cardRef].forEach((ref, i) => {
       const el = ref.current;
       if (!el) return;
-      el.style.opacity = "0";
       el.style.transform = i === 0 ? "translateY(-16px)" : "translateY(28px) scale(0.97)";
       setTimeout(() => {
-        el.style.transition = "opacity 0.75s cubic-bezier(0.22,1,0.36,1), transform 0.75s cubic-bezier(0.22,1,0.36,1)";
-        el.style.opacity = "1";
+        el.style.transition = "transform 0.75s cubic-bezier(0.22,1,0.36,1)";
         el.style.transform = "none";
       }, 200 + i * 150);
     });

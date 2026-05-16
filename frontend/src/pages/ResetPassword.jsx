@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios.js";
@@ -9,6 +9,7 @@ const ResetPassword = ({ onAuth }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -48,7 +49,18 @@ const ResetPassword = ({ onAuth }) => {
         <label className="label" htmlFor="password">
           New password
         </label>
-        <input className="field mt-1" id="password" type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required />
+        <div className="relative mt-1">
+          <input className="field pr-12" id="password" type={showPassword ? "text" : "password"} minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-white/45 transition hover:bg-white/10 hover:text-cyan-300"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            title={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={18} strokeWidth={1.8} /> : <Eye size={18} strokeWidth={1.8} />}
+          </button>
+        </div>
         <p className="mt-1 text-xs text-slate-500">Use 8+ characters with uppercase, lowercase, number, and special character.</p>
 
         <button className="btn-primary mt-6 w-full" type="submit" disabled={loading}>

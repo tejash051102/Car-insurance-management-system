@@ -1,4 +1,4 @@
-import { BadgeIndianRupee, Car, ClipboardCheck, ShieldCheck } from "lucide-react";
+import { BadgeIndianRupee, Car, ClipboardCheck, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios.js";
@@ -200,37 +200,70 @@ function MetricBadge({ icon: Icon, value, label, color, delay }) {
 /* ─── Input field ─── */
 function Field({ label, id, type = "text", name, value, onChange, placeholder, inputMode, maxLength, required, autoFocus }) {
   const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword && showPassword ? "text" : type;
+  const PasswordIcon = showPassword ? EyeOff : Eye;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <label htmlFor={id} style={{ fontSize: "12px", fontWeight: 500, color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
         {label}
       </label>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        inputMode={inputMode}
-        maxLength={maxLength}
-        required={required}
-        autoFocus={autoFocus}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        style={{
-          background: focused ? "rgba(14,165,233,0.06)" : "rgba(255,255,255,0.04)",
-          border: `1px solid ${focused ? "rgba(14,165,233,0.5)" : "rgba(255,255,255,0.1)"}`,
-          borderRadius: "10px",
-          padding: "13px 16px",
-          fontSize: "15px",
-          color: "#fff",
-          outline: "none",
-          width: "100%",
-          transition: "background 0.2s, border-color 0.2s",
-          caretColor: "#0ea5e9",
-        }}
-      />
+      <div style={{ position: "relative" }}>
+        <input
+          id={id}
+          name={name}
+          type={inputType}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          required={required}
+          autoFocus={autoFocus}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={{
+            background: focused ? "rgba(14,165,233,0.06)" : "rgba(255,255,255,0.04)",
+            border: `1px solid ${focused ? "rgba(14,165,233,0.5)" : "rgba(255,255,255,0.1)"}`,
+            borderRadius: "10px",
+            padding: isPassword ? "13px 48px 13px 16px" : "13px 16px",
+            fontSize: "15px",
+            color: "#fff",
+            outline: "none",
+            width: "100%",
+            transition: "background 0.2s, border-color 0.2s",
+            caretColor: "#0ea5e9",
+          }}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            title={showPassword ? "Hide password" : "Show password"}
+            style={{
+              position: "absolute",
+              right: "12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "28px",
+              height: "28px",
+              border: "none",
+              borderRadius: "8px",
+              background: "transparent",
+              color: showPassword ? "#0ea5e9" : "rgba(255,255,255,0.45)",
+              cursor: "pointer",
+            }}
+          >
+            <PasswordIcon size={18} strokeWidth={1.8} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -251,18 +284,14 @@ const Login = ({ onAuth }) => {
   useEffect(() => {
     const card = cardRef.current;
     const left = leftRef.current;
-    card.style.opacity = "0";
     card.style.transform = "translateY(32px) scale(0.97)";
-    left.style.opacity = "0";
     left.style.transform = "translateX(-24px)";
     const t1 = setTimeout(() => {
-      left.style.transition = "opacity 0.8s ease, transform 0.8s ease";
-      left.style.opacity = "1";
+      left.style.transition = "transform 0.8s ease";
       left.style.transform = "translateX(0)";
     }, 200);
     const t2 = setTimeout(() => {
-      card.style.transition = "opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1)";
-      card.style.opacity = "1";
+      card.style.transition = "transform 0.8s cubic-bezier(0.22,1,0.36,1)";
       card.style.transform = "translateY(0) scale(1)";
     }, 400);
     return () => { clearTimeout(t1); clearTimeout(t2); };
